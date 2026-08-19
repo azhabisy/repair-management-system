@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
         .header { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
         .header h1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2.5em; margin-bottom: 10px; }
@@ -58,6 +58,13 @@
         .price-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.3); }
         .price-row:last-child { border-bottom: none; font-weight: bold; font-size: 1.2em; }
         .profit-display { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 15px; border-radius: 10px; margin-top: 15px; text-align: center; font-size: 1.3em; font-weight: bold; }
+        .search-box { margin-bottom: 20px; }
+        .search-box input { width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 1em; }
+        .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-btn { padding: 10px 20px; border: 2px solid #667eea; background: white; color: #667eea; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .filter-btn.active, .filter-btn:hover { background: #667eea; color: white; }
+        .warranty-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.9em; font-weight: 600; background: #28a745; color: white; }
+        .warranty-expired { background: #dc3545; }
         @media (max-width: 768px) { .header h1 { font-size: 1.8em; } .nav { flex-direction: column; } .nav-btn { min-width: 100%; } .stats-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -72,6 +79,7 @@
             <button class="nav-btn" onclick="showSection('new-job', this)">➕ New Job</button>
             <button class="nav-btn" onclick="showSection('jobs', this)">📋 Jobs</button>
             <button class="nav-btn" onclick="showSection('customers', this)">👥 Customers</button>
+            <button class="nav-btn" onclick="showSection('warranty', this)">🛡️ Warranty</button>
         </div>
         <div class="content">
             <div id="dashboard" class="section active">
@@ -107,11 +115,24 @@
             </div>
             <div id="jobs" class="section">
                 <h2 style="margin-bottom: 20px;">All Jobs</h2>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="🔍 Search by customer name, device, or job ID..." oninput="filterJobs()">
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" onclick="filterByStatus('all', this)">All</button>
+                    <button class="filter-btn" onclick="filterByStatus('pending', this)">Pending</button>
+                    <button class="filter-btn" onclick="filterByStatus('progress', this)">In Progress</button>
+                    <button class="filter-btn" onclick="filterByStatus('completed', this)">Completed</button>
+                </div>
                 <div id="all-jobs" class="job-list"></div>
             </div>
             <div id="customers" class="section">
                 <h2 style="margin-bottom: 20px;">Customer Database</h2>
                 <div id="customer-list" class="job-list"></div>
+            </div>
+            <div id="warranty" class="section">
+                <h2 style="margin-bottom: 20px;">Warranty Tracker</h2>
+                <div id="warranty-list" class="job-list"></div>
             </div>
             <div id="job-detail" class="section">
                 <button onclick="showSection('jobs', document.querySelectorAll('.nav-btn')[2])" class="btn btn-danger" style="margin-bottom: 20px;">← Back</button>
@@ -123,6 +144,7 @@
         let jobs = JSON.parse(localStorage.getItem('repair-jobs')) || [];
         let customers = JSON.parse(localStorage.getItem('repair-customers')) || [];
         let revenueChart, profitChart;
+        let currentFilter = 'all';
         
         function showSection(sectionId, btn) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -132,6 +154,7 @@
             if (sectionId === 'dashboard') updateDashboard();
             if (sectionId === 'jobs') renderJobs();
             if (sectionId === 'customers') renderCustomers();
+            if (sectionId === 'warranty') renderWarranty();
         }
         
         function updateDashboard() {
@@ -273,7 +296,22 @@
         }
         
         function renderJobs() {
-            document.getElementById('all-jobs').innerHTML = jobs.length ? jobs.map(job => `
+            let filteredJobs = jobs;
+            
+            if (currentFilter !== 'all') {
+                filteredJobs = jobs.filter(j => j.status === currentFilter);
+            }
+            
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            if (searchTerm) {
+                filteredJobs = filteredJobs.filter(j => 
+                    j.customerName.toLowerCase().includes(searchTerm) ||
+                    j.deviceModel.toLowerCase().includes(searchTerm) ||
+                    j.id.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            document.getElementById('all-jobs').innerHTML = filteredJobs.length ? filteredJobs.map(job => `
                 <div class="job-card" onclick="viewJob('${job.id}')">
                     <h4>${job.id}</h4>
                     <p><strong>${job.customerName}</strong> - ${job.deviceModel}</p>
@@ -281,7 +319,18 @@
                     <p><strong>Revenue:</strong> RM ${job.customerPrice.toFixed(2)} | <strong>Profit:</strong> RM ${job.profit.toFixed(2)}</p>
                     <span class="status-badge status-${job.status}">${job.status}</span>
                 </div>
-            `).join('') : '<p>No jobs yet</p>';
+            `).join('') : '<p>No jobs found</p>';
+        }
+        
+        function filterByStatus(status, btn) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderJobs();
+        }
+        
+        function filterJobs() {
+            renderJobs();
         }
         
         function viewJob(jobId) {
@@ -564,6 +613,26 @@
                     <p><strong>Total Jobs:</strong> ${customer.jobs.length}</p>
                 </div>
             `).join('') : '<p>No customers yet</p>';
+        }
+        
+        function renderWarranty() {
+            const warrantyJobs = jobs.filter(j => j.status === 'completed');
+            
+            document.getElementById('warranty-list').innerHTML = warrantyJobs.length ? warrantyJobs.map(job => {
+                const warrantyExpiry = new Date(job.createdAt);
+                warrantyExpiry.setDate(warrantyExpiry.getDate() + 30);
+                const isExpired = new Date() > warrantyExpiry;
+                
+                return `
+                    <div class="job-card">
+                        <h4>${job.id}</h4>
+                        <p><strong>${job.customerName}</strong> - ${job.deviceModel}</p>
+                        <p><strong>Completed:</strong> ${new Date(job.createdAt).toLocaleDateString()}</p>
+                        <p><strong>Warranty Expiry:</strong> ${warrantyExpiry.toLocaleDateString()}</p>
+                        <span class="warranty-badge ${isExpired ? 'warranty-expired' : ''}">${isExpired ? 'EXPIRED' : 'ACTIVE'}</span>
+                    </div>
+                `;
+            }).join('') : '<p>No completed jobs yet</p>';
         }
         
         updateDashboard();
