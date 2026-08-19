@@ -1,641 +1,3304 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ms">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Repair Pro - Management System</title>
+    <title>RepairTrack Pro — Pengurusan Servis Phone</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
-        .header h1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2.5em; margin-bottom: 10px; }
-        .header p { color: #6c757d; font-size: 1.1em; }
-        .nav { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .nav-btn { flex: 1; min-width: 150px; padding: 15px 25px; border: none; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 15px; cursor: pointer; font-size: 1em; font-weight: 600; color: #495057; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
-        .nav-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .content { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
-        .section { display: none; }
-        .section.active { display: block; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3); position: relative; overflow: hidden; }
-        .stat-card::before { content: ''; position: absolute; top: -50%; right: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); }
-        .stat-card h3 { font-size: 2.5em; margin-bottom: 5px; position: relative; z-index: 1; }
-        .stat-card p { font-size: 1.1em; opacity: 0.9; position: relative; z-index: 1; }
-        .stat-card.profit { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
-        .stat-card.revenue { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .stat-card.jobs { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .chart-container { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #495057; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 1em; transition: all 0.3s; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
-        .btn { padding: 12px 30px; border: none; border-radius: 10px; font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.3s; margin-right: 10px; margin-bottom: 10px; }
-        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
-        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
-        .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
-        .job-list { display: grid; gap: 15px; }
-        .job-card { background: white; padding: 20px; border-radius: 15px; border-left: 4px solid #667eea; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .job-card:hover { transform: translateX(5px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
-        .job-card h4 { color: #667eea; margin-bottom: 10px; }
-        .job-card p { color: #6c757d; margin-bottom: 5px; }
-        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.9em; font-weight: 600; }
-        .status-pending { background: #ffc107; color: #000; }
-        .status-progress { background: #17a2b8; color: white; }
-        .status-completed { background: #28a745; color: white; }
-        .checklist { background: #f8f9fa; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-        .checklist-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #e9ecef; }
-        .checklist-item:last-child { border-bottom: none; }
-        .checklist-item input[type="checkbox"] { margin-right: 15px; width: 20px; height: 20px; }
-        .signature-pad { border: 2px solid #e9ecef; border-radius: 10px; margin-bottom: 20px; background: white; touch-action: none; }
-        .price-section { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 15px; margin: 20px 0; }
-        .price-section h3 { margin-bottom: 15px; }
-        .price-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.3); }
-        .price-row:last-child { border-bottom: none; font-weight: bold; font-size: 1.2em; }
-        .profit-display { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 15px; border-radius: 10px; margin-top: 15px; text-align: center; font-size: 1.3em; font-weight: bold; }
-        .search-box { margin-bottom: 20px; }
-        .search-box input { width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 1em; }
-        .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .filter-btn { padding: 10px 20px; border: 2px solid #667eea; background: white; color: #667eea; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
-        .filter-btn.active, .filter-btn:hover { background: #667eea; color: white; }
-        .warranty-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.9em; font-weight: 600; background: #28a745; color: white; }
-        .warranty-expired { background: #dc3545; }
-        @media (max-width: 768px) { .header h1 { font-size: 1.8em; } .nav { flex-direction: column; } .nav-btn { min-width: 100%; } .stats-grid { grid-template-columns: 1fr; } }
+/* =============================================
+   RepairTrack Pro — Styles
+   Modern, Mobile-First Design
+   ============================================= */
+
+/* CSS VARIABLES */
+:root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --secondary: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #334155;
+    --bg-input: #475569;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    --border: #475569;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    
+    --transition: all 0.3s ease;
+}
+
+/* RESET & BASE */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+/* =============================================
+   LOGIN PAGE
+   ============================================= */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1a2e 100%);
+}
+
+.login-box {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.login-header .logo-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.login-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.login-header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* =============================================
+   APP LAYOUT
+   ============================================= */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 260px;
+    background: var(--bg-secondary);
+    position: fixed;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    transition: var(--transition);
+}
+
+.sidebar-header {
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.sidebar-header .logo-icon {
+    font-size: 36px;
+}
+
+.sidebar-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 16px 12px;
+    overflow-y: auto;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+}
+
+.nav-icon {
+    font-size: 20px;
+}
+
+.sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.btn-logout {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.btn-logout:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* MOBILE HEADER */
+.mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--bg-secondary);
+    padding: 0 16px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 99;
+    border-bottom: 1px solid var(--border);
+}
+
+.menu-toggle {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+}
+
+.mobile-header h1 {
+    font-size: 16px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    background: var(--bg-card);
+    border: none;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* MAIN CONTENT */
+.main-content {
+    flex: 1;
+    margin-left: 260px;
+    padding: 32px;
+    min-height: 100vh;
+}
+
+/* PAGES */
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* =============================================
+   STATS CARDS
+   ============================================= */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+}
+
+.stat-icon {
+    font-size: 48px;
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+}
+
+.stat-revenue .stat-icon { background: rgba(16, 185, 129, 0.2); }
+.stat-profit .stat-icon { background: rgba(99, 102, 241, 0.2); }
+.stat-cost .stat-icon { background: rgba(239, 68, 68, 0.2); }
+.stat-jobs .stat-icon { background: rgba(59, 130, 246, 0.2); }
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.stat-revenue .stat-value { color: var(--success); }
+.stat-profit .stat-value { color: var(--primary); }
+.stat-cost .stat-value { color: var(--danger); }
+.stat-jobs .stat-value { color: var(--info); }
+
+/* =============================================
+   CHARTS
+   ============================================= */
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.chart-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.chart-card h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.chart-card canvas {
+    max-height: 300px;
+}
+
+/* PERIOD SELECTOR */
+.header-period-selector {
+    display: flex;
+    gap: 8px;
+    background: var(--bg-secondary);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+}
+
+.period-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.period-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.period-btn:hover:not(.active) {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+/* RECENT JOBS */
+.recent-jobs-section {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h3 {
+    font-size: 18px;
+}
+
+.recent-jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.job-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.job-card:hover {
+    background: var(--bg-input);
+}
+
+.job-info h4 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.job-info p {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.job-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.job-amount {
+    text-align: right;
+}
+
+.job-amount .profit {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.job-amount .date {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* STATUS BADGES */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+.status-repair { background: rgba(59, 130, 246, 0.2); color: var(--info); }
+.status-waiting-part { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+.status-completed { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+/* =============================================
+   FORMS
+   ============================================= */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* PROFIT DISPLAY */
+.profit-display {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    padding: 16px 20px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.profit-display span {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.profit-display .profit-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+}
+
+.error-message {
+    color: var(--danger);
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+}
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-input);
+}
+
+.btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+.btn-full {
+    width: 100%;
+    justify-content: center;
+}
+
+/* =============================================
+   MODALS
+   ============================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-overlay.show {
+    display: flex;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-md { max-width: 500px; }
+.modal-lg { max-width: 700px; }
+.modal-xl { max-width: 900px; }
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+    z-index: 1;
+}
+
+.modal-header h2 {
+    font-size: 20px;
+}
+
+.modal-close {
+    background: var(--bg-card);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: var(--transition);
+}
+
+.modal-close:hover {
+    background: var(--danger);
+    color: white;
+}
+
+.modal form,
+.modal > div:not(.modal-header):not(.modal-footer) {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-secondary);
+}
+
+/* =============================================
+   JOBS LIST
+   ============================================= */
+.filter-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-bar select,
+.filter-bar input {
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.filter-bar input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.jobs-list .job-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.jobs-list .job-card .job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.jobs-list .job-card .job-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.jobs-list .job-card .job-details span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.jobs-list .job-card .job-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.job-actions .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+/* =============================================
+   INVENTORY
+   ============================================= */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.inventory-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.inventory-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+}
+
+.inventory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.inventory-header h4 {
+    font-size: 16px;
+}
+
+.inventory-category {
+    font-size: 12px;
+    padding: 4px 8px;
+    background: var(--bg-card);
+    border-radius: 4px;
+    color: var(--text-secondary);
+}
+
+.inventory-stock {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 12px 0;
+}
+
+.inventory-stock .stock-value {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.inventory-stock.low .stock-value {
+    color: var(--danger);
+}
+
+.inventory-stock .stock-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.inventory-prices {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.inventory-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.inventory-actions .btn {
+    flex: 1;
+    padding: 8px;
+    font-size: 12px;
+    justify-content: center;
+}
+
+/* =============================================
+   REPORTS
+   ============================================= */
+.report-filters {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: var(--radius);
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-group label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 10px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+}
+
+.report-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.report-card {
+    background: var(--bg-secondary);
+    padding: 24px;
+    border-radius: var(--radius);
+    text-align: center;
+}
+
+.report-card h3 {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.report-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.report-table-section {
+    background: var(--bg-secondary);
+    padding: 24px;
+    border-radius: var(--radius);
+}
+
+.report-table-section h3 {
+    margin-bottom: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--bg-card);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+td {
+    font-size: 14px;
+}
+
+tr:hover {
+    background: var(--bg-card);
+}
+
+/* =============================================
+   SETTINGS
+   ============================================= */
+.settings-section {
+    background: var(--bg-secondary);
+    padding: 24px;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+}
+
+.settings-section h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.settings-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.danger-zone {
+    border: 1px solid var(--danger);
+}
+
+.danger-zone h3 {
+    color: var(--danger);
+}
+
+/* =============================================
+   TOAST
+   ============================================= */
+#toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toast {
+    padding: 16px 24px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    animation: slideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(100px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.toast.success { border-left: 4px solid var(--success); }
+.toast.error { border-left: 4px solid var(--danger); }
+.toast.warning { border-left: 4px solid var(--warning); }
+.toast.info { border-left: 4px solid var(--info); }
+
+/* =============================================
+   EMPTY STATE
+   ============================================= */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+}
+
+.empty-state::before {
+    content: "📭";
+    font-size: 64px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+/* =============================================
+   VIEW JOB DETAIL
+   ============================================= */
+.view-job-section {
+    margin-bottom: 20px;
+}
+
+.view-job-section h4 {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.view-job-section p {
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.view-job-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.view-job-stat {
+    background: var(--bg-card);
+    padding: 16px;
+    border-radius: var(--radius-sm);
+}
+
+.view-job-stat label {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.view-job-stat span {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.view-job-stat.profit span {
+    color: var(--success);
+}
+
+/* =============================================
+   SIGNATURE PAD
+   ============================================= */
+.signature-section {
+    margin-top: 24px;
+    padding: 20px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+}
+
+.signature-section h4 {
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.signature-pad-container {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.signature-pad {
+    width: 100%;
+    height: 150px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: white;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.signature-pad.signed {
+    border-style: solid;
+    border-color: var(--success);
+}
+
+.signature-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.signature-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-muted);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.signature-pad.signed + .signature-placeholder {
+    display: none;
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: 80px 16px 16px;
+    }
+    
+    .mobile-header {
+        display: flex;
+    }
+    
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 32px;
+    }
+    
+    .stat-value {
+        font-size: 22px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .report-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .modal {
+        margin: 10px;
+        max-height: calc(100vh - 20px);
+    }
+    
+    .inventory-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* PRINT STYLES */
+@media print {
+    .sidebar,
+    .mobile-header,
+    .btn,
+    .modal-footer {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin: 0;
+        padding: 20px;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .page {
+        display: block !important;
+    }
+}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔧 Mobile Repair Pro</h1>
-            <p>Professional Repair Management System</p>
+    <!-- LOGIN PAGE -->
+    <div id="login-page" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="logo-icon">📱</div>
+                <h1>RepairTrack Pro</h1>
+                <p>Sistem Pengurusan Servis Telefon</p>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div id="login-error" class="error-message"></div>
+                <button type="submit" class="btn btn-primary btn-full">Log Masuk</button>
+            </form>
         </div>
-        <div class="nav">
-            <button class="nav-btn active" onclick="showSection('dashboard', this)">📊 Dashboard</button>
-            <button class="nav-btn" onclick="showSection('new-job', this)">➕ New Job</button>
-            <button class="nav-btn" onclick="showSection('jobs', this)">📋 Jobs</button>
-            <button class="nav-btn" onclick="showSection('customers', this)">👥 Customers</button>
-            <button class="nav-btn" onclick="showSection('warranty', this)">🛡️ Warranty</button>
-        </div>
-        <div class="content">
-            <div id="dashboard" class="section active">
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app-container" class="app-container hidden">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">📱</div>
+                <h2>RepairTrack</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+                    <span class="nav-icon">📊</span> Dashboard
+                </a>
+                <a class="nav-item" data-page="jobs" onclick="showPage('jobs')">
+                    <span class="nav-icon">🔧</span> Rekod Job
+                </a>
+                <a class="nav-item" data-page="inventory" onclick="showPage('inventory')">
+                    <span class="nav-icon">📦</span> Inventory
+                </a>
+                <a class="nav-item" data-page="reports" onclick="showPage('reports')">
+                    <span class="nav-icon">📈</span> Laporan
+                </a>
+                <a class="nav-item" data-page="settings" onclick="showPage('settings')">
+                    <span class="nav-icon">⚙️</span> Tetapan
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-logout" onclick="handleLogout()">🚪 Logout</button>
+            </div>
+        </aside>
+
+        <!-- MOBILE HEADER -->
+        <header class="mobile-header">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>RepairTrack Pro</h1>
+            <div class="header-actions">
+                <button class="btn-icon" onclick="showToast('Notifications')">🔔</button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- DASHBOARD PAGE -->
+            <div id="page-dashboard" class="page active">
+                <div class="page-header">
+                    <h1>📊 Dashboard</h1>
+                    <div class="header-period-selector">
+                        <button class="period-btn active" data-period="weekly" onclick="changePeriod('weekly')">Minggu</button>
+                        <button class="period-btn" data-period="monthly" onclick="changePeriod('monthly')">Bulan</button>
+                        <button class="period-btn" data-period="yearly" onclick="changePeriod('yearly')">Tahun</button>
+                    </div>
+                </div>
+
+                <!-- STATS CARDS -->
                 <div class="stats-grid">
-                    <div class="stat-card jobs"><h3 id="total-jobs">0</h3><p>Total Jobs</p></div>
-                    <div class="stat-card revenue"><h3 id="total-revenue">RM 0</h3><p>Total Revenue</p></div>
-                    <div class="stat-card profit"><h3 id="total-profit">RM 0</h3><p>Total Profit</p></div>
-                    <div class="stat-card"><h3 id="active-jobs">0</h3><p>Active Jobs</p></div>
+                    <div class="stat-card stat-revenue">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Pendapatan</span>
+                            <span class="stat-value" id="stat-revenue">RM 0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-profit">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Untung Bersih</span>
+                            <span class="stat-value" id="stat-profit">RM 0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-cost">
+                        <div class="stat-icon">📉</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Kos Total</span>
+                            <span class="stat-value" id="stat-cost">RM 0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-jobs">
+                        <div class="stat-icon">🔧</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Job Selesai</span>
+                            <span class="stat-value" id="stat-jobs">0</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="revenueChart"></canvas>
+
+                <!-- CHARTS -->
+                <div class="charts-section">
+                    <div class="chart-card">
+                        <h3>📊 Graf Pendapatan & Untung</h3>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>📋 Job Distribution by Status</h3>
+                        <canvas id="statusChart"></canvas>
+                    </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="profitChart"></canvas>
+
+                <!-- RECENT JOBS -->
+                <div class="recent-jobs-section">
+                    <div class="section-header">
+                        <h3>🕐 Job Terbaru</h3>
+                        <button class="btn btn-sm btn-primary" onclick="openAddJobModal()">+ Job Baru</button>
+                    </div>
+                    <div class="recent-jobs-list" id="recent-jobs-list">
+                        <p class="empty-state">Tiada job terbaru lagi</p>
+                    </div>
                 </div>
-                <h2 style="margin: 20px 0;">Recent Jobs</h2>
-                <div id="recent-jobs" class="job-list"></div>
             </div>
-            <div id="new-job" class="section">
-                <h2 style="margin-bottom: 20px;">Create New Job Order</h2>
-                <form id="job-form">
-                    <div class="form-group"><label>Customer Name *</label><input type="text" id="customer-name" required></div>
-                    <div class="form-group"><label>Phone Number *</label><input type="tel" id="customer-phone" required></div>
-                    <div class="form-group"><label>Device Model *</label><input type="text" id="device-model" placeholder="e.g., iPhone 13 Pro Max" required></div>
-                    <div class="form-group"><label>IMEI Number</label><input type="text" id="device-imei" placeholder="15 digits"></div>
-                    <div class="form-group"><label>Issue Description *</label><textarea id="issue-desc" rows="4" required></textarea></div>
-                    <div class="form-group"><label>Component Cost (RM) *</label><input type="number" id="component-cost" step="0.01" required placeholder="Cost of parts"></div>
-                    <div class="form-group"><label>Labour Cost (RM) *</label><input type="number" id="labour-cost" step="0.01" required placeholder="Your labour cost"></div>
-                    <div class="form-group"><label>Customer Price (RM) *</label><input type="number" id="customer-price" step="0.01" required placeholder="Price customer pays"></div>
-                    <div class="profit-display" id="profit-preview">Profit: RM 0.00</div>
-                    <button type="submit" class="btn btn-primary">Create Job Order</button>
-                </form>
-            </div>
-            <div id="jobs" class="section">
-                <h2 style="margin-bottom: 20px;">All Jobs</h2>
-                <div class="search-box">
-                    <input type="text" id="search-input" placeholder="🔍 Search by customer name, device, or job ID..." oninput="filterJobs()">
+
+            <!-- JOBS PAGE -->
+            <div id="page-jobs" class="page">
+                <div class="page-header">
+                    <h1>🔧 Rekod Job</h1>
+                    <button class="btn btn-primary" onclick="openAddJobModal()">+ Job Baru</button>
                 </div>
-                <div class="filter-buttons">
-                    <button class="filter-btn active" onclick="filterByStatus('all', this)">All</button>
-                    <button class="filter-btn" onclick="filterByStatus('pending', this)">Pending</button>
-                    <button class="filter-btn" onclick="filterByStatus('progress', this)">In Progress</button>
-                    <button class="filter-btn" onclick="filterByStatus('completed', this)">Completed</button>
+
+                <!-- FILTER -->
+                <div class="filter-bar">
+                    <select id="filter-status" onchange="filterJobs()">
+                        <option value="">Semua Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="repair">Tengah Repair</option>
+                        <option value="waiting-part">Tunggu Part</option>
+                        <option value="completed">Selesai</option>
+                    </select>
+                    <input type="text" id="search-job" placeholder="🔍 Cari nama / no telefon..." oninput="filterJobs()">
                 </div>
-                <div id="all-jobs" class="job-list"></div>
+
+                <!-- JOBS LIST -->
+                <div class="jobs-list" id="jobs-list">
+                    <p class="empty-state">Tiada job ditemui</p>
+                </div>
             </div>
-            <div id="customers" class="section">
-                <h2 style="margin-bottom: 20px;">Customer Database</h2>
-                <div id="customer-list" class="job-list"></div>
+
+            <!-- INVENTORY PAGE -->
+            <div id="page-inventory" class="page">
+                <div class="page-header">
+                    <h1>📦 Inventory</h1>
+                    <button class="btn btn-primary" onclick="openAddInventoryModal()">+ Tambah Stok</button>
+                </div>
+
+                <div class="inventory-grid" id="inventory-list">
+                    <p class="empty-state">Tiada item dalam inventory</p>
+                </div>
             </div>
-            <div id="warranty" class="section">
-                <h2 style="margin-bottom: 20px;">Warranty Tracker</h2>
-                <div id="warranty-list" class="job-list"></div>
+
+            <!-- REPORTS PAGE -->
+            <div id="page-reports" class="page">
+                <div class="page-header">
+                    <h1>📈 Laporan</h1>
+                </div>
+
+                <div class="report-filters">
+                    <div class="filter-group">
+                        <label>Dari:</label>
+                        <input type="date" id="report-from">
+                    </div>
+                    <div class="filter-group">
+                        <label> Hingga:</label>
+                        <input type="date" id="report-to">
+                    </div>
+                    <button class="btn btn-primary" onclick="generateReport()"> Jana Laporan</button>
+                    <button class="btn btn-secondary" onclick="exportReportPDF()">📄 Export PDF</button>
+                </div>
+
+                <div class="report-summary" id="report-summary">
+                    <div class="report-card">
+                        <h3>Jumlah Job</h3>
+                        <p class="report-value" id="report-total-jobs">0</p>
+                    </div>
+                    <div class="report-card">
+                        <h3>Jumlah Pendapatan</h3>
+                        <p class="report-value" id="report-total-revenue">RM 0</p>
+                    </div>
+                    <div class="report-card">
+                        <h3>Jumlah Kos</h3>
+                        <p class="report-value" id="report-total-cost">RM 0</p>
+                    </div>
+                    <div class="report-card">
+                        <h3>Untung Bersih</h3>
+                        <p class="report-value" id="report-net-profit">RM 0</p>
+                    </div>
+                </div>
+
+                <div class="report-table-section">
+                    <h3>Senarai Job</h3>
+                    <div class="table-container">
+                        <table id="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Tarikh</th>
+                                    <th>Nama</th>
+                                    <th>Model</th>
+                                    <th>Status</th>
+                                    <th>Pendapatan</th>
+                                    <th>Untung</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <div id="job-detail" class="section">
-                <button onclick="showSection('jobs', document.querySelectorAll('.nav-btn')[2])" class="btn btn-danger" style="margin-bottom: 20px;">← Back</button>
-                <div id="job-detail-content"></div>
+
+            <!-- SETTINGS PAGE -->
+            <div id="page-settings" class="page">
+                <div class="page-header">
+                    <h1>⚙️ Tetapan</h1>
+                </div>
+
+                <div class="settings-section">
+                    <h3>🔐 Tukar Password</h3>
+                    <form onsubmit="changePassword(event)">
+                        <div class="form-group">
+                            <label>Password Semasa</label>
+                            <input type="password" id="current-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password Baru</label>
+                            <input type="password" id="new-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Sahkan Password Baru</label>
+                            <input type="password" id="confirm-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Tukar Password</button>
+                    </form>
+                </div>
+
+                <div class="settings-section">
+                    <h3>📤 Export / Import Data</h3>
+                    <div class="settings-buttons">
+                        <button class="btn btn-secondary" onclick="exportData()">📤 Export Semua Data</button>
+                        <label class="btn btn-secondary">
+                            📥 Import Data
+                            <input type="file" accept=".json" onchange="importData(event)" hidden>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-section danger-zone">
+                    <h3>⚠️ Zon Berbahaya</h3>
+                    <button class="btn btn-danger" onclick="clearAllData()">🗑️ Padam Semua Data</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- ADD/EDIT JOB MODAL -->
+    <div class="modal-overlay" id="modal-job" onclick="if(event.target===this)closeModal('modal-job')">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2 id="modal-job-title">🔧 Tambah Job Baru</h2>
+                <button class="modal-close" onclick="closeModal('modal-job')">✕</button>
+            </div>
+            <form id="job-form" onsubmit="saveJob(event)">
+                <input type="hidden" id="job-id">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nama Pelanggan *</label>
+                        <input type="text" id="job-customer" required placeholder="Nama penuh">
+                    </div>
+                    <div class="form-group">
+                        <label>No Telefon *</label>
+                        <input type="tel" id="job-phone" required placeholder="012-3456789">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Model Telefon *</label>
+                        <input type="text" id="job-model" required placeholder="iPhone 14 Pro / Samsung S24">
+                    </div>
+                    <div class="form-group">
+                        <label>No IMEI</label>
+                        <input type="text" id="job-imei" placeholder="Optional">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Kerosakan *</label>
+                    <textarea id="job-issue" required placeholder="Describe the problem..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Kos Modal (RM) *</label>
+                        <input type="number" id="job-cost" required step="0.01" min="0" placeholder="0.00" oninput="calculateProfit()">
+                        <small>Kos part + other expenses</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Upah (RM) *</label>
+                        <input type="number" id="job-fee" required step="0.01" min="0" placeholder="0.00" oninput="calculateProfit()">
+                        <small>Labor charge</small>
+                    </div>
+                </div>
+
+                <div class="profit-display" id="profit-display">
+                    <span>Untung Bersih:</span>
+                    <span class="profit-value" id="calculated-profit">RM 0.00</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="job-status">
+                        <option value="pending">⏳ Pending</option>
+                        <option value="repair">🔧 Tengah Repair</option>
+                        <option value="waiting-part">⏰ Tunggu Part</option>
+                        <option value="completed">✅ Selesai</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Tarikh</label>
+                    <input type="date" id="job-date">
+                </div>
+
+                <div class="form-group">
+                    <label>Warranty (Hari)</label>
+                    <input type="number" id="job-warranty" min="0" placeholder="30">
+                    <small>Leave empty if no warranty</small>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-job')">Batal</button>
+                    <button type="submit" class="btn btn-primary">💾 Simpan Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- VIEW JOB MODAL -->
+    <div class="modal-overlay" id="modal-view-job" onclick="if(event.target===this)closeModal('modal-view-job')">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2>📋 Detail Job</h2>
+                <button class="modal-close" onclick="closeModal('modal-view-job')">✕</button>
+            </div>
+            <div id="view-job-content"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-view-job')">Tutup</button>
+                <button class="btn btn-primary" onclick="printInvoice()">🖨️ Print Invois</button>
+                <button class="btn btn-success" onclick="downloadInvoice()">📄 Download PDF</button>
             </div>
         </div>
     </div>
-    <script>
-        let jobs = JSON.parse(localStorage.getItem('repair-jobs')) || [];
-        let customers = JSON.parse(localStorage.getItem('repair-customers')) || [];
-        let revenueChart, profitChart;
-        let currentFilter = 'all';
-        
-        function showSection(sectionId, btn) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(sectionId).classList.add('active');
-            if (btn) btn.classList.add('active');
-            if (sectionId === 'dashboard') updateDashboard();
-            if (sectionId === 'jobs') renderJobs();
-            if (sectionId === 'customers') renderCustomers();
-            if (sectionId === 'warranty') renderWarranty();
-        }
-        
-        function updateDashboard() {
-            const totalRevenue = jobs.reduce((sum, j) => sum + j.customerPrice, 0);
-            const totalCost = jobs.reduce((sum, j) => sum + j.componentCost + j.labourCost, 0);
-            const totalProfit = totalRevenue - totalCost;
-            
-            document.getElementById('total-jobs').textContent = jobs.length;
-            document.getElementById('total-revenue').textContent = 'RM ' + totalRevenue.toFixed(2);
-            document.getElementById('total-profit').textContent = 'RM ' + totalProfit.toFixed(2);
-            document.getElementById('active-jobs').textContent = jobs.filter(j => j.status !== 'completed').length;
-            
-            updateCharts();
-            
-            const recentJobs = jobs.slice(-5).reverse();
-            document.getElementById('recent-jobs').innerHTML = recentJobs.length ? recentJobs.map(job => `
-                <div class="job-card" onclick="viewJob('${job.id}')">
-                    <h4>${job.id}</h4>
-                    <p><strong>${job.customerName}</strong> - ${job.deviceModel}</p>
-                    <p>${job.issue}</p>
-                    <p><strong>Revenue:</strong> RM ${job.customerPrice.toFixed(2)} | <strong>Profit:</strong> RM ${(job.customerPrice - job.componentCost - job.labourCost).toFixed(2)}</p>
-                    <span class="status-badge status-${job.status}">${job.status}</span>
+
+    <!-- ADD INVENTORY MODAL -->
+    <div class="modal-overlay" id="modal-inventory" onclick="if(event.target===this)closeModal('modal-inventory')">
+        <div class="modal modal-md">
+            <div class="modal-header">
+                <h2 id="modal-inventory-title">📦 Tambah Item Inventory</h2>
+                <button class="modal-close" onclick="closeModal('modal-inventory')">✕</button>
+            </div>
+            <form onsubmit="saveInventoryItem(event)">
+                <input type="hidden" id="inventory-id">
+                <div class="form-group">
+                    <label>Nama Part *</label>
+                    <input type="text" id="inventory-name" required placeholder="e.g., iPhone Screen">
                 </div>
-            `).join('') : '<p>No jobs yet</p>';
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Kategori</label>
+                        <select id="inventory-category">
+                            <option value="screen">🖥️ Screen</option>
+                            <option value="battery">🔋 Battery</option>
+                            <option value="charging">⚡ Charging Port</option>
+                            <option value="camera">📷 Camera</option>
+                            <option value="speaker">🔊 Speaker</option>
+                            <option value="button">🔘 Button</option>
+                            <option value="tool">🔧 Tool</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stok Semasa *</label>
+                        <input type="number" id="inventory-stock" required min="0" placeholder="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Harga Beli (RM)</label>
+                        <input type="number" id="inventory-buy-price" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Harga Jual (RM)</label>
+                        <input type="number" id="inventory-sell-price" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Supplier</label>
+                    <input type="text" id="inventory-supplier" placeholder="Supplier name">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-inventory')">Batal</button>
+                    <button type="submit" class="btn btn-primary">💾 Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SIGNATURE MODAL -->
+    <div class="modal-overlay" id="modal-signature" onclick="if(event.target===this)closeModal('modal-signature')">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2>✍️ Tandatangan Invois</h2>
+                <button class="modal-close" onclick="closeModal('modal-signature')">✕</button>
+            </div>
+            <div style="padding: 24px;">
+                <p style="margin-bottom: 16px; color: var(--text-secondary);">Sila tandatangan di bawah untuk mengesahkan penerimaan servis.</p>
+                
+                <div class="signature-section">
+                    <h4>👨‍💼 Tandatangan Technician</h4>
+                    <div class="signature-pad-container">
+                        <canvas id="tech-signature-pad" class="signature-pad"></canvas>
+                        <span class="signature-placeholder">Tandatangan di sini...</span>
+                    </div>
+                    <div class="signature-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="clearSignature('tech')">🗑️ Clear</button>
+                    </div>
+                </div>
+
+                <div class="signature-section">
+                    <h4>👤 Tandatangan Pelanggan</h4>
+                    <div class="signature-pad-container">
+                        <canvas id="customer-signature-pad" class="signature-pad"></canvas>
+                        <span class="signature-placeholder">Tandatangan di sini...</span>
+                    </div>
+                    <div class="signature-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="clearSignature('customer')">🗑️ Clear</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-signature')">Batal</button>
+                <button class="btn btn-primary" onclick="saveSignatures()">💾 Simpan & Generate PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
+
+    <script>
+/* =============================================
+   RepairTrack Pro — Main Application JavaScript
+   Complete, Bug-Free Implementation
+   ============================================= */
+
+// ===== STATE MANAGEMENT =====
+let state = {
+    isLoggedIn: false,
+    currentPage: 'dashboard',
+    currentPeriod: 'weekly',
+    selectedJobId: null,
+    jobs: [],
+    inventory: [],
+    credentials: {
+        username: 'admin',
+        password: 'admin123'
+    }
+};
+
+// ===== INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', function() {
+    loadCredentials();
+    loadData();
+    checkAuth();
+    initCharts();
+    setupEventListeners();
+    
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    const jobDateInput = document.getElementById('job-date');
+    if (jobDateInput) jobDateInput.value = today;
+    const reportFromInput = document.getElementById('report-from');
+    if (reportFromInput) reportFromInput.value = getDefaultReportDate('from');
+    const reportToInput = document.getElementById('report-to');
+    if (reportToInput) reportToInput.value = today;
+});
+
+// ===== CREDENTIALS MANAGEMENT =====
+function loadCredentials() {
+    const savedCreds = localStorage.getItem('repairtrack_credentials');
+    if (savedCreds) {
+        state.credentials = JSON.parse(savedCreds);
+    }
+}
+
+function saveCredentials() {
+    localStorage.setItem('repairtrack_credentials', JSON.stringify(state.credentials));
+}
+
+// ===== DATA PERSISTENCE =====
+function loadData() {
+    const savedData = localStorage.getItem('repairtrack_data');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        state.jobs = data.jobs || [];
+        state.inventory = data.inventory || [];
+    }
+}
+
+function saveData() {
+    const data = {
+        jobs: state.jobs,
+        inventory: state.inventory
+    };
+    localStorage.setItem('repairtrack_data', JSON.stringify(data));
+}
+
+// ===== AUTHENTICATION =====
+function checkAuth() {
+    const isLoggedIn = localStorage.getItem('repairtrack_auth') === 'true';
+    if (isLoggedIn) {
+        showApp();
+    } else {
+        showLogin();
+    }
+}
+
+function handleLogin(event) {
+    event.preventDefault();
+    
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('login-error');
+    
+    if (username === state.credentials.username && password === state.credentials.password) {
+        localStorage.setItem('repairtrack_auth', 'true');
+        errorDiv.classList.remove('show');
+        showApp();
+        showToast('Selamat datang! 🎉', 'success');
+    } else {
+        errorDiv.textContent = 'Username atau password salah!';
+        errorDiv.classList.add('show');
+    }
+}
+
+function handleLogout() {
+    if (confirm('Nak logout?')) {
+        localStorage.removeItem('repairtrack_auth');
+        showLogin();
+        showToast('Berjaya logout!', 'info');
+    }
+}
+
+function showLogin() {
+    document.getElementById('login-page').classList.remove('hidden');
+    document.getElementById('app-container').classList.add('hidden');
+}
+
+function showApp() {
+    document.getElementById('login-page').classList.add('hidden');
+    document.getElementById('app-container').classList.remove('hidden');
+    renderDashboard();
+    renderJobsList();
+    renderInventory();
+}
+
+// ===== NAVIGATION =====
+function showPage(pageName) {
+    state.currentPage = pageName;
+    
+    // Update nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.page === pageName) {
+            item.classList.add('active');
         }
+    });
+    
+    // Update pages
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.getElementById(`page-${pageName}`).classList.add('active');
+    
+    // Close sidebar on mobile
+    document.getElementById('sidebar').classList.remove('open');
+    
+    // Render page content
+    switch(pageName) {
+        case 'dashboard':
+            renderDashboard();
+            break;
+        case 'jobs':
+            renderJobsList();
+            break;
+        case 'inventory':
+            renderInventory();
+            break;
+        case 'reports':
+            generateReport();
+            break;
+    }
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+    updateStats();
+    updateCharts();
+    renderRecentJobs();
+}
+
+function updateStats() {
+    const completedJobs = state.jobs.filter(j => j.status === 'completed');
+    
+    let totalRevenue = 0;
+    let totalCost = 0;
+    
+    completedJobs.forEach(job => {
+        // Revenue = cost + fee (customer pays both)
+        totalRevenue += (parseFloat(job.cost) || 0) + (parseFloat(job.fee) || 0);
+        totalCost += (parseFloat(job.cost) || 0);
+    });
+    
+    const profit = totalRevenue - totalCost;
+    
+    document.getElementById('stat-revenue').textContent = formatCurrency(totalRevenue);
+    document.getElementById('stat-profit').textContent = formatCurrency(profit);
+    document.getElementById('stat-cost').textContent = formatCurrency(totalCost);
+    document.getElementById('stat-jobs').textContent = completedJobs.length;
+}
+
+function renderRecentJobs() {
+    const container = document.getElementById('recent-jobs-list');
+    const recentJobs = [...state.jobs].reverse().slice(0, 5);
+    
+    if (recentJobs.length === 0) {
+        container.innerHTML = '<p class="empty-state">Tiada job terbaru lagi</p>';
+        return;
+    }
+    
+    container.innerHTML = recentJobs.map(job => `
+        <div class="job-card" onclick="viewJob('${job.id}')">
+            <div class="job-info">
+                <h4>${escapeHtml(job.customer)}</h4>
+                <p>${escapeHtml(job.model)} — ${getStatusText(job.status)}</p>
+            </div>
+            <div class="job-meta">
+                <div class="job-amount">
+                    <div class="profit">${formatCurrency(calculateProfit(job))}</div>
+                    <div class="date">${formatDate(job.date)}</div>
+                </div>
+                <span class="status-badge status-${job.status}">${getStatusText(job.status)}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ===== CHARTS =====
+let revenueChart = null;
+let statusChart = null;
+
+function initCharts() {
+    const revenueCtx = document.getElementById('revenueChart');
+    const statusCtx = document.getElementById('statusChart');
+    
+    if (revenueCtx && statusCtx) {
+        // Revenue Chart
+        revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Pendapatan',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Untung Bersih',
+                        data: [],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        labels: { color: '#94a3b8' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    },
+                    y: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    }
+                }
+            }
+        });
         
-        function updateCharts() {
-            const last7Days = [];
-            const revenueData = [];
-            const profitData = [];
-            
+        // Status Chart
+        statusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Tengah Repair', 'Tunggu Part', 'Selesai'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function updateCharts() {
+    if (!revenueChart || !statusChart) return;
+    
+    const periodData = getPeriodData();
+    
+    // Update Revenue Chart
+    revenueChart.data.labels = periodData.labels;
+    revenueChart.data.datasets[0].data = periodData.revenue;
+    revenueChart.data.datasets[1].data = periodData.profit;
+    revenueChart.update();
+    
+    // Update Status Chart
+    const statusCounts = {
+        pending: state.jobs.filter(j => j.status === 'pending').length,
+        repair: state.jobs.filter(j => j.status === 'repair').length,
+        waiting: state.jobs.filter(j => j.status === 'waiting-part').length,
+        completed: state.jobs.filter(j => j.status === 'completed').length
+    };
+    
+    statusChart.data.datasets[0].data = [
+        statusCounts.pending,
+        statusCounts.repair,
+        statusCounts.waiting,
+        statusCounts.completed
+    ];
+    statusChart.update();
+}
+
+function changePeriod(period) {
+    state.currentPeriod = period;
+    
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.period === period) {
+            btn.classList.add('active');
+        }
+    });
+    
+    updateCharts();
+}
+
+function getPeriodData() {
+    const now = new Date();
+    let labels = [];
+    let revenue = [];
+    let profit = [];
+    
+    switch(state.currentPeriod) {
+        case 'weekly':
+            // Last 7 days
             for (let i = 6; i >= 0; i--) {
-                const date = new Date();
+                const date = new Date(now);
                 date.setDate(date.getDate() - i);
                 const dateStr = date.toISOString().split('T')[0];
-                last7Days.push(dateStr);
                 
-                const dayJobs = jobs.filter(j => j.createdAt && j.createdAt.startsWith(dateStr));
-                const dayRevenue = dayJobs.reduce((sum, j) => sum + j.customerPrice, 0);
-                const dayProfit = dayJobs.reduce((sum, j) => sum + (j.customerPrice - j.componentCost - j.labourCost), 0);
+                labels.push(date.toLocaleDateString('ms-MY', { weekday: 'short' }));
                 
-                revenueData.push(dayRevenue);
-                profitData.push(dayProfit);
+                const dayJobs = state.jobs.filter(j => j.date === dateStr && j.status === 'completed');
+                let dayRevenue = 0;
+                let dayCost = 0;
+                
+                dayJobs.forEach(j => {
+                    dayRevenue += (parseFloat(j.cost) || 0) + (parseFloat(j.fee) || 0);
+                    dayCost += parseFloat(j.cost) || 0;
+                });
+                
+                revenue.push(dayRevenue);
+                profit.push(dayRevenue - dayCost);
             }
+            break;
             
-            if (revenueChart) revenueChart.destroy();
-            if (profitChart) profitChart.destroy();
-            
-            const ctx1 = document.getElementById('revenueChart').getContext('2d');
-            revenueChart = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: last7Days,
-                    datasets: [{
-                        label: 'Revenue (RM)',
-                        data: revenueData,
-                        borderColor: '#f5576c',
-                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { title: { display: true, text: 'Revenue - Last 7 Days', font: { size: 16 } } }
-                }
-            });
-            
-            const ctx2 = document.getElementById('profitChart').getContext('2d');
-            profitChart = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: last7Days,
-                    datasets: [{
-                        label: 'Profit (RM)',
-                        data: profitData,
-                        backgroundColor: 'rgba(56, 239, 125, 0.8)',
-                        borderColor: '#11998e',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { title: { display: true, text: 'Profit - Last 7 Days', font: { size: 16 } } }
-                }
-            });
-        }
-        
-        document.getElementById('job-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const componentCost = parseFloat(document.getElementById('component-cost').value);
-            const labourCost = parseFloat(document.getElementById('labour-cost').value);
-            const customerPrice = parseFloat(document.getElementById('customer-price').value);
-            const profit = customerPrice - componentCost - labourCost;
-            
-            const job = {
-                id: 'JOB-' + Date.now(),
-                customerName: document.getElementById('customer-name').value,
-                customerPhone: document.getElementById('customer-phone').value,
-                deviceModel: document.getElementById('device-model').value,
-                deviceImei: document.getElementById('device-imei').value,
-                issue: document.getElementById('issue-desc').value,
-                componentCost: componentCost,
-                labourCost: labourCost,
-                customerPrice: customerPrice,
-                profit: profit,
-                status: 'pending',
-                createdAt: new Date().toISOString(),
-                preChecklist: [],
-                postChecklist: [],
-                customerSignature: null,
-                ownerSignature: null
-            };
-            
-            jobs.push(job);
-            localStorage.setItem('repair-jobs', JSON.stringify(jobs));
-            
-            if (!customers.find(c => c.phone === job.customerPhone)) {
-                customers.push({ name: job.customerName, phone: job.customerPhone, jobs: [job.id] });
-                localStorage.setItem('repair-customers', JSON.stringify(customers));
+        case 'monthly':
+            // Last 4 weeks
+            for (let w = 3; w >= 0; w--) {
+                const weekStart = new Date(now);
+                weekStart.setDate(weekStart.getDate() - (w * 7 + 6));
+                const weekEnd = new Date(now);
+                weekEnd.setDate(weekEnd.getDate() - (w * 7));
+                
+                labels.push(`Week ${4 - w}`);
+                
+                const weekJobs = state.jobs.filter(j => {
+                    const jobDate = new Date(j.date);
+                    return jobDate >= weekStart && jobDate < weekEnd && j.status === 'completed';
+                });
+                
+                let weekRevenue = 0;
+                let weekCost = 0;
+                
+                weekJobs.forEach(j => {
+                    weekRevenue += (parseFloat(j.cost) || 0) + (parseFloat(j.fee) || 0);
+                    weekCost += parseFloat(j.cost) || 0;
+                });
+                
+                revenue.push(weekRevenue);
+                profit.push(weekRevenue - weekCost);
             }
+            break;
             
-            alert('Job created successfully! Job ID: ' + job.id + '\nProfit: RM ' + profit.toFixed(2));
-            this.reset();
-            document.getElementById('profit-preview').textContent = 'Profit: RM 0.00';
-            showSection('jobs', document.querySelectorAll('.nav-btn')[2]);
-        });
-        
-        ['component-cost', 'labour-cost', 'customer-price'].forEach(id => {
-            document.getElementById(id).addEventListener('input', calculateProfit);
-        });
-        
-        function calculateProfit() {
-            const componentCost = parseFloat(document.getElementById('component-cost').value) || 0;
-            const labourCost = parseFloat(document.getElementById('labour-cost').value) || 0;
-            const customerPrice = parseFloat(document.getElementById('customer-price').value) || 0;
-            const profit = customerPrice - componentCost - labourCost;
-            document.getElementById('profit-preview').textContent = 'Profit: RM ' + profit.toFixed(2);
-        }
-        
-        function renderJobs() {
-            let filteredJobs = jobs;
-            
-            if (currentFilter !== 'all') {
-                filteredJobs = jobs.filter(j => j.status === currentFilter);
-            }
-            
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            if (searchTerm) {
-                filteredJobs = filteredJobs.filter(j => 
-                    j.customerName.toLowerCase().includes(searchTerm) ||
-                    j.deviceModel.toLowerCase().includes(searchTerm) ||
-                    j.id.toLowerCase().includes(searchTerm)
+        case 'yearly':
+            // Last 12 months
+            for (let m = 11; m >= 0; m--) {
+                const date = new Date(now.getFullYear(), now.getMonth() - m, 1);
+                const monthStr = date.toISOString().slice(0, 7);
+                
+                labels.push(date.toLocaleDateString('ms-MY', { month: 'short' }));
+                
+                const monthJobs = state.jobs.filter(j => 
+                    j.date.startsWith(monthStr) && j.status === 'completed'
                 );
-            }
-            
-            document.getElementById('all-jobs').innerHTML = filteredJobs.length ? filteredJobs.map(job => `
-                <div class="job-card" onclick="viewJob('${job.id}')">
-                    <h4>${job.id}</h4>
-                    <p><strong>${job.customerName}</strong> - ${job.deviceModel}</p>
-                    <p>${job.issue}</p>
-                    <p><strong>Revenue:</strong> RM ${job.customerPrice.toFixed(2)} | <strong>Profit:</strong> RM ${job.profit.toFixed(2)}</p>
-                    <span class="status-badge status-${job.status}">${job.status}</span>
-                </div>
-            `).join('') : '<p>No jobs found</p>';
-        }
-        
-        function filterByStatus(status, btn) {
-            currentFilter = status;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderJobs();
-        }
-        
-        function filterJobs() {
-            renderJobs();
-        }
-        
-        function viewJob(jobId) {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            
-            const checklistItems = ['Screen', 'Touch', 'Camera', 'Speaker', 'Microphone', 'WiFi', 'Bluetooth', 'Charging Port', 'Battery', 'Buttons'];
-            
-            document.getElementById('job-detail-content').innerHTML = `
-                <h2>Job Details: ${job.id}</h2>
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 15px; margin: 20px 0;">
-                    <h3>Customer Information</h3>
-                    <p><strong>Name:</strong> ${job.customerName}</p>
-                    <p><strong>Phone:</strong> ${job.customerPhone}</p>
-                    <p><strong>Device:</strong> ${job.deviceModel}</p>
-                    <p><strong>IMEI:</strong> ${job.deviceImei || 'N/A'}</p>
-                    <p><strong>Issue:</strong> ${job.issue}</p>
-                    <p><strong>Status:</strong> <span class="status-badge status-${job.status}">${job.status}</span></p>
-                    <p><strong>Created:</strong> ${new Date(job.createdAt).toLocaleString()}</p>
-                </div>
                 
-                <div class="price-section">
-                    <h3>💰 Financial Details (Internal)</h3>
-                    <div class="price-row"><span>Component Cost:</span><span>RM ${job.componentCost.toFixed(2)}</span></div>
-                    <div class="price-row"><span>Labour Cost:</span><span>RM ${job.labourCost.toFixed(2)}</span></div>
-                    <div class="price-row"><span>Total Cost:</span><span>RM ${(job.componentCost + job.labourCost).toFixed(2)}</span></div>
-                    <div class="price-row"><span>Customer Price:</span><span>RM ${job.customerPrice.toFixed(2)}</span></div>
-                    <div class="profit-display">Net Profit: RM ${job.profit.toFixed(2)}</div>
-                </div>
+                let monthRevenue = 0;
+                let monthCost = 0;
                 
-                <div class="checklist">
-                    <h3>Pre-Repair Checklist</h3>
-                    ${checklistItems.map((item, i) => `
-                        <div class="checklist-item">
-                            <input type="checkbox" id="pre-${i}" ${job.preChecklist.includes(item) ? 'checked' : ''} onchange="updateChecklist('${job.id}', 'pre', '${item}', this.checked)">
-                            <label for="pre-${i}">${item}</label>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div style="margin: 20px 0;">
-                    <button class="btn btn-primary" onclick="updateJobStatus('${job.id}', 'progress')">Mark In Progress</button>
-                    <button class="btn btn-success" onclick="updateJobStatus('${job.id}', 'completed')">Mark Completed</button>
-                </div>
-                
-                <div class="checklist">
-                    <h3>Post-Repair Checklist</h3>
-                    ${checklistItems.map((item, i) => `
-                        <div class="checklist-item">
-                            <input type="checkbox" id="post-${i}" ${job.postChecklist.includes(item) ? 'checked' : ''} onchange="updateChecklist('${job.id}', 'post', '${item}', this.checked)">
-                            <label for="post-${i}">${item}</label>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div style="margin: 20px 0;">
-                    <h3>Digital Signatures</h3>
-                    <p>Customer Signature:</p>
-                    <canvas id="customer-signature" class="signature-pad" width="400" height="150"></canvas>
-                    <button class="btn btn-primary" onclick="captureSignature('${job.id}', 'customer')">Capture Customer Signature</button>
-                    
-                    <p style="margin-top: 20px;">Owner Signature:</p>
-                    <canvas id="owner-signature" class="signature-pad" width="400" height="150"></canvas>
-                    <button class="btn btn-primary" onclick="captureSignature('${job.id}', 'owner')">Capture Owner Signature</button>
-                </div>
-                
-                <div style="margin: 20px 0;">
-                    <button class="btn btn-success" onclick="generateAndDownloadPDF('${job.id}')">📄 Download PDF Receipt</button>
-                </div>
-                
-                <div id="receipt-preview" style="margin-top: 20px;"></div>
-            `;
-            
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById('job-detail').classList.add('active');
-            initSignaturePads();
-        }
-        
-        function updateChecklist(jobId, type, item, checked) {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            
-            const checklistKey = type + 'Checklist';
-            if (checked) {
-                if (!job[checklistKey].includes(item)) job[checklistKey].push(item);
-            } else {
-                job[checklistKey] = job[checklistKey].filter(i => i !== item);
-            }
-            
-            localStorage.setItem('repair-jobs', JSON.stringify(jobs));
-        }
-        
-        function updateJobStatus(jobId, status) {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            
-            job.status = status;
-            localStorage.setItem('repair-jobs', JSON.stringify(jobs));
-            alert('Job status updated to: ' + status);
-            viewJob(jobId);
-        }
-        
-        let signaturePads = {};
-        
-        function initSignaturePads() {
-            ['customer-signature', 'owner-signature'].forEach(id => {
-                const canvas = document.getElementById(id);
-                if (!canvas) return;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                
-                let drawing = false;
-                
-                canvas.addEventListener('mousedown', startDrawing);
-                canvas.addEventListener('mousemove', draw);
-                canvas.addEventListener('mouseup', stopDrawing);
-                canvas.addEventListener('mouseout', stopDrawing);
-                
-                canvas.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    const rect = canvas.getBoundingClientRect();
-                    startDrawing({ offsetX: touch.clientX - rect.left, offsetY: touch.clientY - rect.top });
+                monthJobs.forEach(j => {
+                    monthRevenue += (parseFloat(j.cost) || 0) + (parseFloat(j.fee) || 0);
+                    monthCost += parseFloat(j.cost) || 0;
                 });
                 
-                canvas.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    const rect = canvas.getBoundingClientRect();
-                    draw({ offsetX: touch.clientX - rect.left, offsetY: touch.clientY - rect.top });
-                });
-                
-                canvas.addEventListener('touchend', stopDrawing);
-                
-                function startDrawing(e) {
-                    drawing = true;
-                    ctx.beginPath();
-                    ctx.moveTo(e.offsetX, e.offsetY);
-                }
-                
-                function draw(e) {
-                    if (!drawing) return;
-                    ctx.lineTo(e.offsetX, e.offsetY);
-                    ctx.stroke();
-                }
-                
-                function stopDrawing() {
-                    drawing = false;
-                }
-                
-                signaturePads[id] = canvas;
-            });
+                revenue.push(monthRevenue);
+                profit.push(monthRevenue - monthCost);
+            }
+            break;
+    }
+    
+    return { labels, revenue, profit };
+}
+
+// ===== JOBS MANAGEMENT =====
+function openAddJobModal() {
+    document.getElementById('modal-job-title').textContent = '🔧 Tambah Job Baru';
+    document.getElementById('job-form').reset();
+    document.getElementById('job-id').value = '';
+    document.getElementById('job-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('calculated-profit').textContent = 'RM 0.00';
+    openModal('modal-job');
+}
+
+function openEditJobModal(jobId) {
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+    
+    document.getElementById('modal-job-title').textContent = '✏️ Edit Job';
+    document.getElementById('job-id').value = job.id;
+    document.getElementById('job-customer').value = job.customer;
+    document.getElementById('job-phone').value = job.phone;
+    document.getElementById('job-model').value = job.model;
+    document.getElementById('job-imei').value = job.imei || '';
+    document.getElementById('job-issue').value = job.issue;
+    document.getElementById('job-cost').value = job.cost;
+    document.getElementById('job-fee').value = job.fee;
+    document.getElementById('job-status').value = job.status;
+    document.getElementById('job-date').value = job.date;
+    document.getElementById('job-warranty').value = job.warranty || '';
+    
+    calculateProfit();
+    openModal('modal-job');
+}
+
+function saveJob(event) {
+    event.preventDefault();
+    
+    const jobId = document.getElementById('job-id').value;
+    const jobData = {
+        id: jobId || generateId(),
+        customer: document.getElementById('job-customer').value.trim(),
+        phone: document.getElementById('job-phone').value.trim(),
+        model: document.getElementById('job-model').value.trim(),
+        imei: document.getElementById('job-imei').value.trim(),
+        issue: document.getElementById('job-issue').value.trim(),
+        cost: parseFloat(document.getElementById('job-cost').value) || 0,
+        fee: parseFloat(document.getElementById('job-fee').value) || 0,
+        status: document.getElementById('job-status').value,
+        date: document.getElementById('job-date').value,
+        warranty: parseInt(document.getElementById('job-warranty').value) || 0,
+        updatedAt: new Date().toISOString()
+    };
+    
+    if (!jobData.customer || !jobData.phone || !jobData.model || !jobData.issue) {
+        showToast('Sila isi semua ruangan yang diperlukan!', 'error');
+        return;
+    }
+    
+    if (jobId) {
+        // Update existing job
+        const index = state.jobs.findIndex(j => j.id === jobId);
+        if (index !== -1) {
+            jobData.createdAt = state.jobs[index].createdAt;
+            jobData.signatures = state.jobs[index].signatures || null;
+            state.jobs[index] = jobData;
         }
-        
-        function captureSignature(jobId, type) {
-            const canvasId = type === 'customer' ? 'customer-signature' : 'owner-signature';
-            const canvas = signaturePads[canvasId];
-            if (!canvas) return;
-            
-            const signature = canvas.toDataURL();
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            
-            if (type === 'customer') job.customerSignature = signature;
-            else job.ownerSignature = signature;
-            
-            localStorage.setItem('repair-jobs', JSON.stringify(jobs));
-            alert(type + ' signature captured!');
-        }
-        
-        async function generateAndDownloadPDF(jobId) {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            
-            const warrantyDays = 30;
-            const warrantyExpiry = new Date();
-            warrantyExpiry.setDate(warrantyExpiry.getDate() + warrantyDays);
-            
-            const receiptHTML = `
-                <div id="receipt-content" style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: 0 auto;">
-                    <div style="text-align: center; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 20px;">
-                        <h1 style="color: #667eea; margin: 0;">🔧 MOBILE REPAIR PRO</h1>
-                        <p style="color: #6c757d; margin: 5px 0;">Professional Repair Service</p>
-                        <p style="color: #6c757d; margin: 5px 0;">USIM Campus | Contact: 01X-XXXXXXX</p>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">Job Information</h3>
-                        <p><strong>Job ID:</strong> ${job.id}</p>
-                        <p><strong>Date:</strong> ${new Date(job.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">Customer Information</h3>
-                        <p><strong>Name:</strong> ${job.customerName}</p>
-                        <p><strong>Phone:</strong> ${job.customerPhone}</p>
-                        <p><strong>Device:</strong> ${job.deviceModel}</p>
-                        <p><strong>IMEI:</strong> ${job.deviceImei || 'N/A'}</p>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">Repair Details</h3>
-                        <p><strong>Issue Reported:</strong> ${job.issue}</p>
-                        <p><strong>Status:</strong> ${job.status}</p>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">Pre-Repair Checklist</h3>
-                        <p>${job.preChecklist.length > 0 ? job.preChecklist.join(', ') : 'No items checked'}</p>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">Post-Repair Checklist</h3>
-                        <p>${job.postChecklist.length > 0 ? job.postChecklist.join(', ') : 'No items checked'}</p>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 10px;">
-                        <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">Payment</h3>
-                        <p><strong>Service Fee:</strong> RM ${job.customerPrice.toFixed(2)}</p>
-                        <p><strong>Warranty:</strong> ${warrantyDays} days</p>
-                        <p><strong>Warranty Expiry:</strong> ${warrantyExpiry.toLocaleDateString()}</p>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">Warranty Terms</h3>
-                        <ul style="margin-left: 20px;">
-                            <li>${warrantyDays} days warranty for the same repair</li>
-                            <li>Warranty does not cover new damage (drops, water, etc.)</li>
-                            <li>Warranty void if device is opened by another party</li>
-                        </ul>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 2px dashed #667eea;">
-                        <div style="text-align: center; flex: 1;">
-                            ${job.customerSignature ? `<img src="${job.customerSignature}" style="max-width: 200px; height: 100px; border: 1px solid #000; margin-bottom: 10px;">` : '<div style="height: 100px; border: 1px solid #000; width: 200px; margin: 0 auto 10px;"></div>'}
-                            <p><strong>Customer Signature</strong></p>
-                            <p>${job.customerName}</p>
-                        </div>
-                        <div style="text-align: center; flex: 1;">
-                            ${job.ownerSignature ? `<img src="${job.ownerSignature}" style="max-width: 200px; height: 100px; border: 1px solid #000; margin-bottom: 10px;">` : '<div style="height: 100px; border: 1px solid #000; width: 200px; margin: 0 auto 10px;"></div>'}
-                            <p><strong>Owner Signature</strong></p>
-                            <p>Hakieem</p>
-                        </div>
-                    </div>
-                    
-                    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px dashed #667eea;">
-                        <p style="font-weight: bold; color: #667eea;">Thank you for your business!</p>
-                    </div>
+        showToast('Job berjaya dikemaskini!', 'success');
+    } else {
+        // Add new job
+        jobData.createdAt = new Date().toISOString();
+        state.jobs.push(jobData);
+        showToast('Job baru berjaya ditambah!', 'success');
+    }
+    
+    saveData();
+    closeModal('modal-job');
+    renderDashboard();
+    renderJobsList();
+}
+
+function viewJob(jobId) {
+    state.selectedJobId = jobId;
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+    
+    const profit = calculateProfit(job);
+    const warrantyEnd = job.warranty ? calculateWarrantyEnd(job.date, job.warranty) : null;
+    const totalPaid = (parseFloat(job.cost) || 0) + (parseFloat(job.fee) || 0);
+    
+    document.getElementById('view-job-content').innerHTML = `
+        <div class="view-job-section">
+            <div class="view-job-grid">
+                <div class="view-job-stat">
+                    <label>Nama Pelanggan</label>
+                    <span>${escapeHtml(job.customer)}</span>
                 </div>
-            `;
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = receiptHTML;
-            tempDiv.style.position = 'fixed';
-            tempDiv.style.left = '-9999px';
-            document.body.appendChild(tempDiv);
-            
-            const canvas = await html2canvas(document.getElementById('receipt-content'));
-            const imgData = canvas.toDataURL('image/png');
-            
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgWidth = 210;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            pdf.save(`Receipt-${job.id}.pdf`);
-            
-            document.body.removeChild(tempDiv);
-            alert('PDF downloaded successfully!');
-        }
-        
-        function renderCustomers() {
-            document.getElementById('customer-list').innerHTML = customers.length ? customers.map(customer => `
-                <div class="job-card">
-                    <h4>${customer.name}</h4>
-                    <p><strong>Phone:</strong> ${customer.phone}</p>
-                    <p><strong>Total Jobs:</strong> ${customer.jobs.length}</p>
+                <div class="view-job-stat">
+                    <label>No Telefon</label>
+                    <span>${escapeHtml(job.phone)}</span>
                 </div>
-            `).join('') : '<p>No customers yet</p>';
-        }
+                <div class="view-job-stat">
+                    <label>Model Telefon</label>
+                    <span>${escapeHtml(job.model)}</span>
+                </div>
+                <div class="view-job-stat">
+                    <label>No IMEI</label>
+                    <span>${escapeHtml(job.imei) || '-'}</span>
+                </div>
+            </div>
+        </div>
         
-        function renderWarranty() {
-            const warrantyJobs = jobs.filter(j => j.status === 'completed');
+        <div class="view-job-section">
+            <h4>Kerosakan</h4>
+            <p>${escapeHtml(job.issue)}</p>
+        </div>
+        
+        <div class="view-job-section">
+            <div class="view-job-grid">
+                <div class="view-job-stat">
+                    <label>Kos Modal</label>
+                    <span>${formatCurrency(job.cost)}</span>
+                </div>
+                <div class="view-job-stat">
+                    <label>Upah</label>
+                    <span>${formatCurrency(job.fee)}</span>
+                </div>
+                <div class="view-job-stat">
+                    <label>Jumlah Dibayar</label>
+                    <span style="color: var(--success);">${formatCurrency(totalPaid)}</span>
+                </div>
+                <div class="view-job-stat profit">
+                    <label>Untung Bersih</label>
+                    <span>${formatCurrency(profit)}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="view-job-section">
+            <div class="view-job-grid">
+                <div class="view-job-stat">
+                    <label>Status</label>
+                    <span class="status-badge status-${job.status}">${getStatusText(job.status)}</span>
+                </div>
+                <div class="view-job-stat">
+                    <label>Tarikh</label>
+                    <span>${formatDate(job.date)}</span>
+                </div>
+                ${warrantyEnd ? `
+                <div class="view-job-stat">
+                    <label>Warranty Expired</label>
+                    <span>${warrantyEnd}</span>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        
+        ${job.signatures ? `
+        <div class="view-job-section">
+            <h4>✍️ Tandatangan</h4>
+            <div class="view-job-grid">
+                <div class="view-job-stat">
+                    <label>Technician</label>
+                    <img src="${job.signatures.technician}" style="max-width: 100%; height: 60px; border: 1px solid var(--border); border-radius: 4px; background: white;">
+                </div>
+                <div class="view-job-stat">
+                    <label>Pelanggan</label>
+                    <img src="${job.signatures.customer}" style="max-width: 100%; height: 60px; border: 1px solid var(--border); border-radius: 4px; background: white;">
+                </div>
+            </div>
+        </div>
+        ` : ''}
+    `;
+    
+    openModal('modal-view-job');
+}
+
+function updateJobStatus(jobId, newStatus) {
+    const job = state.jobs.find(j => j.id === jobId);
+    if (!job) return;
+    
+    job.status = newStatus;
+    job.updatedAt = new Date().toISOString();
+    
+    saveData();
+    renderDashboard();
+    renderJobsList();
+    showToast(`Status ditukar kepada ${getStatusText(newStatus)}!`, 'success');
+}
+
+function deleteJob(jobId) {
+    if (!confirm('Nak padam job ini?')) return;
+    
+    state.jobs = state.jobs.filter(j => j.id !== jobId);
+    saveData();
+    renderDashboard();
+    renderJobsList();
+    closeModal('modal-view-job');
+    showToast('Job berjaya dipadam!', 'success');
+}
+
+function renderJobsList() {
+    const container = document.getElementById('jobs-list');
+    const filterStatus = document.getElementById('filter-status').value;
+    const searchTerm = document.getElementById('search-job').value.toLowerCase();
+    
+    let filteredJobs = state.jobs;
+    
+    // Apply filters
+    if (filterStatus) {
+        filteredJobs = filteredJobs.filter(j => j.status === filterStatus);
+    }
+    
+    if (searchTerm) {
+        filteredJobs = filteredJobs.filter(j => 
+            j.customer.toLowerCase().includes(searchTerm) ||
+            j.phone.toLowerCase().includes(searchTerm) ||
+            j.model.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // Sort by date descending
+    filteredJobs = filteredJobs.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    if (filteredJobs.length === 0) {
+        container.innerHTML = '<p class="empty-state">Tiada job ditemui</p>';
+        return;
+    }
+    
+    container.innerHTML = filteredJobs.map(job => `
+        <div class="job-card">
+            <div class="job-header">
+                <div class="job-info">
+                    <h4>${escapeHtml(job.customer)}</h4>
+                    <p>📱 ${escapeHtml(job.model)} | 📞 ${escapeHtml(job.phone)}</p>
+                </div>
+                <span class="status-badge status-${job.status}">${getStatusText(job.status)}</span>
+            </div>
             
-            document.getElementById('warranty-list').innerHTML = warrantyJobs.length ? warrantyJobs.map(job => {
-                const warrantyExpiry = new Date(job.createdAt);
-                warrantyExpiry.setDate(warrantyExpiry.getDate() + 30);
-                const isExpired = new Date() > warrantyExpiry;
-                
-                return `
-                    <div class="job-card">
-                        <h4>${job.id}</h4>
-                        <p><strong>${job.customerName}</strong> - ${job.deviceModel}</p>
-                        <p><strong>Completed:</strong> ${new Date(job.createdAt).toLocaleDateString()}</p>
-                        <p><strong>Warranty Expiry:</strong> ${warrantyExpiry.toLocaleDateString()}</p>
-                        <span class="warranty-badge ${isExpired ? 'warranty-expired' : ''}">${isExpired ? 'EXPIRED' : 'ACTIVE'}</span>
-                    </div>
-                `;
-            }).join('') : '<p>No completed jobs yet</p>';
+            <div class="job-details">
+                <span>📅 ${formatDate(job.date)}</span>
+                <span>💰 Jumlah: ${formatCurrency((parseFloat(job.cost) || 0) + (parseFloat(job.fee) || 0))}</span>
+                <span>📈 Untung: ${formatCurrency(calculateProfit(job))}</span>
+                <span>📝 ${escapeHtml(job.issue).substring(0, 50)}${job.issue.length > 50 ? '...' : ''}</span>
+            </div>
+            
+            <div class="job-actions">
+                <button class="btn btn-sm btn-secondary" onclick="viewJob('${job.id}')">👁️ Lihat</button>
+                <button class="btn btn-sm btn-secondary" onclick="openEditJobModal('${job.id}')">✏️ Edit</button>
+                <select class="btn-sm btn-secondary" onchange="updateJobStatus('${job.id}', this.value)">
+                    <option value="pending" ${job.status === 'pending' ? 'selected' : ''}>⏳ Pending</option>
+                    <option value="repair" ${job.status === 'repair' ? 'selected' : ''}>🔧 Repair</option>
+                    <option value="waiting-part" ${job.status === 'waiting-part' ? 'selected' : ''}>⏰ Tunggu Part</option>
+                    <option value="completed" ${job.status === 'completed' ? 'selected' : ''}>✅ Selesai</option>
+                </select>
+                <button class="btn btn-sm btn-danger" onclick="deleteJob('${job.id}')">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterJobs() {
+    renderJobsList();
+}
+
+// ===== INVENTORY MANAGEMENT =====
+function openAddInventoryModal() {
+    document.getElementById('modal-inventory-title').textContent = '📦 Tambah Item Inventory';
+    document.getElementById('inventory-id').value = '';
+    document.querySelector('#modal-inventory form').reset();
+    openModal('modal-inventory');
+}
+
+function openEditInventoryModal(itemId) {
+    const item = state.inventory.find(i => i.id === itemId);
+    if (!item) return;
+    
+    document.getElementById('modal-inventory-title').textContent = '✏️ Edit Item Inventory';
+    document.getElementById('inventory-id').value = item.id;
+    document.getElementById('inventory-name').value = item.name;
+    document.getElementById('inventory-category').value = item.category;
+    document.getElementById('inventory-stock').value = item.stock;
+    document.getElementById('inventory-buy-price').value = item.buyPrice || '';
+    document.getElementById('inventory-sell-price').value = item.sellPrice || '';
+    document.getElementById('inventory-supplier').value = item.supplier || '';
+    
+    openModal('modal-inventory');
+}
+
+function saveInventoryItem(event) {
+    event.preventDefault();
+    
+    const itemId = document.getElementById('inventory-id').value;
+    const itemData = {
+        id: itemId || generateId(),
+        name: document.getElementById('inventory-name').value.trim(),
+        category: document.getElementById('inventory-category').value,
+        stock: parseInt(document.getElementById('inventory-stock').value) || 0,
+        buyPrice: parseFloat(document.getElementById('inventory-buy-price').value) || 0,
+        sellPrice: parseFloat(document.getElementById('inventory-sell-price').value) || 0,
+        supplier: document.getElementById('inventory-supplier').value.trim()
+    };
+    
+    if (!itemData.name) {
+        showToast('Sila isi nama item!', 'error');
+        return;
+    }
+    
+    if (itemId) {
+        const index = state.inventory.findIndex(i => i.id === itemId);
+        if (index !== -1) {
+            state.inventory[index] = itemData;
+        }
+        showToast('Item berjaya dikemaskini!', 'success');
+    } else {
+        state.inventory.push(itemData);
+        showToast('Item berjaya ditambah!', 'success');
+    }
+    
+    saveData();
+    closeModal('modal-inventory');
+    renderInventory();
+}
+
+function updateInventoryStock(itemId, change) {
+    const item = state.inventory.find(i => i.id === itemId);
+    if (!item) return;
+    
+    item.stock = Math.max(0, item.stock + change);
+    saveData();
+    renderInventory();
+    showToast(`Stok dikemaskini!`, 'success');
+}
+
+function deleteInventoryItem(itemId) {
+    if (!confirm('Nak padam item ini?')) return;
+    
+    state.inventory = state.inventory.filter(i => i.id !== itemId);
+    saveData();
+    renderInventory();
+    showToast('Item berjaya dipadam!', 'success');
+}
+
+function renderInventory() {
+    const container = document.getElementById('inventory-list');
+    
+    if (state.inventory.length === 0) {
+        container.innerHTML = '<p class="empty-state">Tiada item dalam inventory</p>';
+        return;
+    }
+    
+    container.innerHTML = state.inventory.map(item => `
+        <div class="inventory-card">
+            <div class="inventory-header">
+                <h4>${escapeHtml(item.name)}</h4>
+                <span class="inventory-category">${getCategoryIcon(item.category)} ${item.category}</span>
+            </div>
+            
+            <div class="inventory-stock ${item.stock <= 5 ? 'low' : ''}">
+                <div>
+                    <span class="stock-value">${item.stock}</span>
+                    <span class="stock-label">Unit</span>
+                </div>
+                ${item.stock <= 5 ? '<span style="color: var(--danger);">⚠️ Stok Rendah!</span>' : ''}
+            </div>
+            
+            <div class="inventory-prices">
+                <span>Beli: ${formatCurrency(item.buyPrice)}</span>
+                <span>Jual: ${formatCurrency(item.sellPrice)}</span>
+            </div>
+            
+            ${item.supplier ? `<p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Supplier: ${escapeHtml(item.supplier)}</p>` : ''}
+            
+            <div class="inventory-actions">
+                <button class="btn btn-secondary" onclick="updateInventoryStock('${item.id}', -1)">➖</button>
+                <button class="btn btn-primary" onclick="updateInventoryStock('${item.id}', 1)">➕</button>
+                <button class="btn btn-secondary" onclick="openEditInventoryModal('${item.id}')">✏️</button>
+                <button class="btn btn-danger" onclick="deleteInventoryItem('${item.id}')">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ===== REPORTS =====
+function getDefaultReportDate(type) {
+    const now = new Date();
+    if (type === 'from') {
+        const from = new Date(now);
+        from.setMonth(from.getMonth() - 1);
+        return from.toISOString().split('T')[0];
+    }
+    return now.toISOString().split('T')[0];
+}
+
+function generateReport() {
+    const fromDate = document.getElementById('report-from').value;
+    const toDate = document.getElementById('report-to').value;
+    
+    const filteredJobs = state.jobs.filter(job => {
+        return job.date >= fromDate && job.date <= toDate;
+    });
+    
+    const completedJobs = filteredJobs.filter(j => j.status === 'completed');
+    
+    let totalRevenue = 0;
+    let totalCost = 0;
+    
+    completedJobs.forEach(job => {
+        totalRevenue += (parseFloat(job.cost) || 0) + (parseFloat(job.fee) || 0);
+        totalCost += parseFloat(job.cost) || 0;
+    });
+    
+    const netProfit = totalRevenue - totalCost;
+    
+    document.getElementById('report-total-jobs').textContent = completedJobs.length;
+    document.getElementById('report-total-revenue').textContent = formatCurrency(totalRevenue);
+    document.getElementById('report-total-cost').textContent = formatCurrency(totalCost);
+    document.getElementById('report-net-profit').textContent = formatCurrency(netProfit);
+    
+    // Populate table
+    const tbody = document.getElementById('report-table-body');
+    if (filteredJobs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Tiada data</td></tr>';
+    } else {
+        tbody.innerHTML = filteredJobs.map(job => `
+            <tr>
+                <td>${formatDate(job.date)}</td>
+                <td>${escapeHtml(job.customer)}</td>
+                <td>${escapeHtml(job.model)}</td>
+                <td><span class="status-badge status-${job.status}">${getStatusText(job.status)}</span></td>
+                <td>${formatCurrency((parseFloat(job.cost) || 0) + (parseFloat(job.fee) || 0))}</td>
+                <td style="color: ${calculateProfit(job) >= 0 ? 'var(--success)' : 'var(--danger)'}">${formatCurrency(calculateProfit(job))}</td>
+            </tr>
+        `).join('');
+    }
+}
+
+function exportReportPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(20);
+    doc.text('RepairTrack Pro - Laporan', 14, 22);
+    
+    // Date range
+    const fromDate = document.getElementById('report-from').value;
+    const toDate = document.getElementById('report-to').value;
+    doc.setFontSize(10);
+    doc.text(`Tempoh: ${formatDate(fromDate)} - ${formatDate(toDate)}`, 14, 30);
+    
+    // Summary
+    doc.setFontSize(12);
+    doc.text('Ringkasan:', 14, 42);
+    doc.setFontSize(10);
+    doc.text(`Jumlah Job Selesai: ${document.getElementById('report-total-jobs').textContent}`, 14, 50);
+    doc.text(`Jumlah Pendapatan: ${document.getElementById('report-total-revenue').textContent}`, 14, 56);
+    doc.text(`Jumlah Kos: ${document.getElementById('report-total-cost').textContent}`, 14, 62);
+    doc.text(`Untung Bersih: ${document.getElementById('report-net-profit').textContent}`, 14, 68);
+    
+    // Table
+    const tableData = state.jobs
+        .filter(job => job.date >= fromDate && job.date <= toDate)
+        .map(job => [
+            formatDate(job.date),
+            job.customer,
+            job.model,
+            getStatusText(job.status),
+            formatCurrency((parseFloat(job.cost) || 0) + (parseFloat(job.fee) || 0)),
+            formatCurrency(calculateProfit(job))
+        ]);
+    
+    doc.autoTable({
+        startY: 78,
+        head: [['Tarikh', 'Pelanggan', 'Model', 'Status', 'Jumlah', 'Untung']],
+        body: tableData,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [99, 102, 241] }
+    });
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(`Muka surat ${i} daripada ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, 'center');
+    }
+    
+    doc.save(`Laporan_RepairTrack_${fromDate}_${toDate}.pdf`);
+    showToast('PDF berjaya dimuat turun!', 'success');
+}
+
+// ===== SIGNATURE PAD =====
+let techSignaturePad = null;
+let customerSignaturePad = null;
+
+function initSignaturePads() {
+    const techCanvas = document.getElementById('tech-signature-pad');
+    const customerCanvas = document.getElementById('customer-signature-pad');
+    
+    if (techCanvas) {
+        techSignaturePad = new SignaturePad(techCanvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        
+        // Handle resize
+        const resizeTechCanvas = () => {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            techCanvas.width = techCanvas.offsetWidth * ratio;
+            techCanvas.height = techCanvas.offsetHeight * ratio;
+            techCanvas.getContext('2d').scale(ratio, ratio);
+            techSignaturePad.clear();
+        };
+        resizeTechCanvas();
+        window.addEventListener('resize', resizeTechCanvas);
+        
+        techSignaturePad.addEventListener('endStroke', () => {
+            techCanvas.classList.add('signed');
+        });
+    }
+    
+    if (customerCanvas) {
+        customerSignaturePad = new SignaturePad(customerCanvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        
+        const resizeCustomerCanvas = () => {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            customerCanvas.width = customerCanvas.offsetWidth * ratio;
+            customerCanvas.height = customerCanvas.offsetHeight * ratio;
+            customerCanvas.getContext('2d').scale(ratio, ratio);
+            customerSignaturePad.clear();
+        };
+        resizeCustomerCanvas();
+        window.addEventListener('resize', resizeCustomerCanvas);
+        
+        customerSignaturePad.addEventListener('endStroke', () => {
+            customerCanvas.classList.add('signed');
+        });
+    }
+}
+
+function clearSignature(type) {
+    if (type === 'tech' && techSignaturePad) {
+        techSignaturePad.clear();
+        document.getElementById('tech-signature-pad').classList.remove('signed');
+    } else if (type === 'customer' && customerSignaturePad) {
+        customerSignaturePad.clear();
+        document.getElementById('customer-signature-pad').classList.remove('signed');
+    }
+}
+
+function saveSignatures() {
+    if (!techSignaturePad || techSignaturePad.isEmpty()) {
+        showToast('Sila tandatangan sebagai technician!', 'error');
+        return;
+    }
+    if (!customerSignaturePad || customerSignaturePad.isEmpty()) {
+        showToast('Sila tandatangan sebagai pelanggan!', 'error');
+        return;
+    }
+    
+    const job = state.jobs.find(j => j.id === state.selectedJobId);
+    if (!job) return;
+    
+    // Save signatures to job
+    job.signatures = {
+        technician: techSignaturePad.toDataURL(),
+        customer: customerSignaturePad.toDataURL(),
+        signedAt: new Date().toISOString()
+    };
+    
+    saveData();
+    closeModal('modal-signature');
+    showToast('Tandatangan berjaya disimpan!', 'success');
+    
+    // Generate PDF with signatures
+    generateInvoicePDF(job);
+}
+
+// ===== INVOICE & WARRANTY =====
+function downloadInvoice() {
+    const job = state.jobs.find(j => j.id === state.selectedJobId);
+    if (!job) return;
+    
+    // Check if signatures exist
+    if (!job.signatures) {
+        // Open signature modal
+        openModal('modal-signature');
+        setTimeout(() => initSignaturePads(), 100);
+    } else {
+        // Generate PDF directly
+        generateInvoicePDF(job);
+    }
+}
+
+function generateInvoicePDF(job) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(24);
+    doc.text('INVOIS', 14, 22);
+    
+    doc.setFontSize(10);
+    doc.text('RepairTrack Pro', 14, 32);
+    doc.text('Servis Telefon Profesional', 14, 38);
+    
+    // Invoice details
+    doc.setFontSize(10);
+    doc.text(`No Invois: INV-${job.id.substring(0, 8).toUpperCase()}`, 140, 22);
+    doc.text(`Tarikh: ${formatDate(job.date)}`, 140, 28);
+    
+    // Customer info
+    doc.setFontSize(12);
+    doc.text('Maklumat Pelanggan:', 14, 54);
+    doc.setFontSize(10);
+    doc.text(`Nama: ${job.customer}`, 14, 62);
+    doc.text(`Telefon: ${job.phone}`, 14, 68);
+    doc.text(`Model: ${job.model}`, 14, 74);
+    if (job.imei) {
+        doc.text(`IMEI: ${job.imei}`, 14, 80);
+    }
+    
+    // Issue
+    doc.setFontSize(12);
+    doc.text('Kerosakan:', 14, 94);
+    doc.setFontSize(10);
+    doc.text(job.issue, 14, 102, { maxWidth: 180 });
+    
+    // Financial details (only show total, not cost breakdown)
+    const yPos = job.issue.length > 100 ? 125 : 115;
+    const totalPaid = (parseFloat(job.cost) || 0) + (parseFloat(job.fee) || 0);
+    
+    doc.setFontSize(12);
+    doc.text('Perincian Harga:', 14, yPos);
+    
+    doc.autoTable({
+        startY: yPos + 8,
+        head: [['Perkara', 'Jumlah']],
+        body: [
+            ['Servis & Pemulihan', `RM ${totalPaid.toFixed(2)}`],
+            ['JUMLAH DIBAYAR', `RM ${totalPaid.toFixed(2)}`]
+        ],
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [99, 102, 241] },
+        footStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' }
+    });
+    
+    // Warranty
+    let finalY = doc.lastAutoTable.finalY + 10;
+    if (job.warranty) {
+        const warrantyEnd = calculateWarrantyEnd(job.date, job.warranty);
+        
+        doc.setFontSize(12);
+        doc.text('Waranti:', 14, finalY);
+        doc.setFontSize(10);
+        doc.text(`Tempoh Waranti: ${job.warranty} hari`, 14, finalY + 8);
+        doc.text(`Tamat Waranti: ${warrantyEnd}`, 14, finalY + 14);
+        finalY += 25;
+    }
+    
+    // Signatures
+    if (job.signatures) {
+        doc.setFontSize(12);
+        doc.text('Tandatangan:', 14, finalY);
+        
+        // Technician signature
+        try {
+            doc.addImage(job.signatures.technician, 'PNG', 14, finalY + 8, 60, 30);
+            doc.setFontSize(8);
+            doc.text('Technician', 14, finalY + 42);
+        } catch (e) {
+            console.log('Error adding technician signature:', e);
         }
         
-        updateDashboard();
+        // Customer signature
+        try {
+            doc.addImage(job.signatures.customer, 'PNG', 110, finalY + 8, 60, 30);
+            doc.setFontSize(8);
+            doc.text('Pelanggan', 110, finalY + 42);
+        } catch (e) {
+            console.log('Error adding customer signature:', e);
+        }
+        
+        finalY += 50;
+    }
+    
+    // Footer
+    doc.setFontSize(8);
+    doc.text('Terima kasih atas kepercayaan anda!', 14, 280);
+    doc.text('RepairTrack Pro - Servis Telefon Profesional', 14, 284);
+    
+    doc.save(`Invois_${job.customer}_${job.date}.pdf`);
+    showToast('Invois PDF berjaya dimuat turun!', 'success');
+}
+
+function printInvoice() {
+    const job = state.jobs.find(j => j.id === state.selectedJobId);
+    if (!job) return;
+    
+    const warrantyEnd = job.warranty ? calculateWarrantyEnd(job.date, job.warranty) : null;
+    const profit = calculateProfit(job);
+    const totalPaid = (parseFloat(job.cost) || 0) + (parseFloat(job.fee) || 0);
+    
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Invois - ${job.customer}</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #6366f1; padding-bottom: 20px; }
+                .header h1 { color: #6366f1; margin: 0; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+                .info-box { background: #f5f5f5; padding: 15px; border-radius: 8px; }
+                .info-box h3 { margin: 0 0 10px 0; color: #333; font-size: 14px; }
+                .info-box p { margin: 5px 0; font-size: 12px; }
+                .issue-box { background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 30px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th { background: #6366f1; color: white; padding: 12px; text-align: left; }
+                td { padding: 12px; border-bottom: 1px solid #ddd; }
+                .total-row { background: #10b981; color: white; font-weight: bold; }
+                .warranty { background: #e7f3ff; padding: 15px; border-radius: 8px; margin-top: 20px; }
+                .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; }
+                .signature-box { text-align: center; }
+                .signature-box img { max-width: 100%; height: 60px; border: 1px solid #ddd; border-radius: 4px; background: white; }
+                .signature-box p { margin-top: 8px; font-size: 12px; color: #666; }
+                .footer { text-align: center; margin-top: 40px; color: #666; font-size: 12px; }
+                @media print { body { padding: 20px; } }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>🛠️ INVOIS SERVIS</h1>
+                <p>RepairTrack Pro - Servis Telefon Profesional</p>
+                <p>No Invois: INV-${job.id.substring(0, 8).toUpperCase()} | Tarikh: ${formatDate(job.date)}</p>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-box">
+                    <h3>📋 Maklumat Pelanggan</h3>
+                    <p><strong>Nama:</strong> ${job.customer}</p>
+                    <p><strong>Telefon:</strong> ${job.phone}</p>
+                    <p><strong>Model:</strong> ${job.model}</p>
+                    ${job.imei ? `<p><strong>IMEI:</strong> ${job.imei}</p>` : ''}
+                </div>
+                <div class="info-box">
+                    <h3>📊 Ringkasan</h3>
+                    <p><strong>Status:</strong> ${getStatusText(job.status)}</p>
+                    <p><strong>Jumlah Dibayar:</strong> <span style="color: #10b981; font-weight: bold;">${formatCurrency(totalPaid)}</span></p>
+                </div>
+            </div>
+            
+            <div class="issue-box">
+                <h3>📝 Kerosakan</h3>
+                <p>${job.issue}</p>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Perkara</th>
+                        <th>Jumlah (RM)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Servis & Pemulihan</td>
+                        <td>${totalPaid.toFixed(2)}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>JUMLAH DIBAYAR</td>
+                        <td>${totalPaid.toFixed(2)}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            ${warrantyEnd ? `
+            <div class="warranty">
+                <h3>🛡️ Waranti</h3>
+                <p><strong>Tempoh:</strong> ${job.warranty} hari</p>
+                <p><strong>Tamat:</strong> ${warrantyEnd}</p>
+            </div>
+            ` : ''}
+            
+            ${job.signatures ? `
+            <div class="signatures">
+                <div class="signature-box">
+                    <img src="${job.signatures.technician}" alt="Technician Signature">
+                    <p><strong>Tandatangan Technician</strong></p>
+                </div>
+                <div class="signature-box">
+                    <img src="${job.signatures.customer}" alt="Customer Signature">
+                    <p><strong>Tandatangan Pelanggan</strong></p>
+                </div>
+            </div>
+            ` : ''}
+            
+            <div class="footer">
+                <p>Terima kasih atas kepercayaan anda!</p>
+                <p>RepairTrack Pro — Servis Telefon Profesional</p>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+}
+
+// ===== SETTINGS =====
+function changePassword(event) {
+    event.preventDefault();
+    
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    if (currentPassword !== state.credentials.password) {
+        showToast('Password semasa salah!', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        showToast('Password baru minima 6 aksara!', 'error');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        showToast('Password baru tidak sepadan!', 'error');
+        return;
+    }
+    
+    // Update credentials
+    state.credentials.password = newPassword;
+    saveCredentials();
+    
+    showToast('Password berjaya ditukar!', 'success');
+    event.target.reset();
+}
+
+function exportData() {
+    const data = {
+        jobs: state.jobs,
+        inventory: state.inventory,
+        credentials: state.credentials,
+        exportDate: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RepairTrack_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showToast('Data berjaya diexport!', 'success');
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            if (data.jobs && Array.isArray(data.jobs)) {
+                state.jobs = data.jobs;
+            }
+            if (data.inventory && Array.isArray(data.inventory)) {
+                state.inventory = data.inventory;
+            }
+            if (data.credentials) {
+                state.credentials = data.credentials;
+                saveCredentials();
+            }
+            
+            saveData();
+            renderDashboard();
+            renderJobsList();
+            renderInventory();
+            
+            showToast(`Data berjaya diimport! (${state.jobs.length} jobs, ${state.inventory.length} items)`, 'success');
+        } catch (error) {
+            showToast('Ralat: Fail tidak sah!', 'error');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function clearAllData() {
+    if (!confirm('⚠️ AWAS! Semua data akan dipadam!\n\nSila pastikan anda ada backup sebelum teruskan.\n\nNak padam semua data?')) {
+        return;
+    }
+    
+    if (!confirm('Ini adalah langkah terakhir. Pasti nak padam semua data?')) {
+        return;
+    }
+    
+    localStorage.removeItem('repairtrack_data');
+    state.jobs = [];
+    state.inventory = [];
+    
+    renderDashboard();
+    renderJobsList();
+    renderInventory();
+    
+    showToast('Semua data telah dipadam!', 'warning');
+}
+
+// ===== UTILITY FUNCTIONS =====
+function calculateProfit(job = null) {
+    if (job) {
+        // Profit = fee (labor charge only, cost is expense)
+        return (parseFloat(job.fee) || 0);
+    }
+    
+    const fee = parseFloat(document.getElementById('job-fee').value) || 0;
+    return fee;
+}
+
+function updateProfitDisplay() {
+    const profit = calculateProfit();
+    const profitEl = document.getElementById('calculated-profit');
+    profitEl.textContent = formatCurrency(profit);
+    profitEl.style.color = profit >= 0 ? '#10b981' : '#ef4444';
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'pending': '⏳ Pending',
+        'repair': '🔧 Tengah Repair',
+        'waiting-part': '⏰ Tunggu Part',
+        'completed': '✅ Selesai'
+    };
+    return statusMap[status] || status;
+}
+
+function getCategoryIcon(category) {
+    const icons = {
+        'screen': '🖥️',
+        'battery': '🔋',
+        'charging': '⚡',
+        'camera': '📷',
+        'speaker': '🔊',
+        'button': '🔘',
+        'tool': '🔧',
+        'other': '📦'
+    };
+    return icons[category] || '📦';
+}
+
+function calculateWarrantyEnd(startDate, days) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + days);
+    return date.toLocaleDateString('ms-MY', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function formatCurrency(amount) {
+    return 'RM ' + (parseFloat(amount) || 0).toFixed(2);
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ms-MY', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ===== MODAL FUNCTIONS =====
+function openModal(modalId) {
+    document.getElementById(modalId).classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// ===== TOAST NOTIFICATIONS =====
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> ${message}`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ===== EVENT LISTENERS =====
+function setupEventListeners() {
+    // Auto-calculate profit on input
+    const costInput = document.getElementById('job-cost');
+    const feeInput = document.getElementById('job-fee');
+    
+    if (costInput && feeInput) {
+        costInput.addEventListener('input', updateProfitDisplay);
+        feeInput.addEventListener('input', updateProfitDisplay);
+    }
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.querySelector('.menu-toggle');
+        
+        if (window.innerWidth <= 1024 && 
+            sidebar.classList.contains('open') &&
+            !sidebar.contains(e.target) &&
+            !menuToggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 1024) {
+            document.getElementById('sidebar').classList.remove('open');
+        }
+    });
+}
+
+// ===== SIMPLE SIGNATURE PAD IMPLEMENTATION =====
+class SignaturePad {
+    constructor(canvas, options = {}) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.options = {
+            backgroundColor: options.backgroundColor || 'rgb(255, 255, 255)',
+            penColor: options.penColor || 'rgb(0, 0, 0)',
+            ...options
+        };
+        
+        this.drawing = false;
+        this.lastPoint = null;
+        this.isEmpty = true;
+        
+        this.setupCanvas();
+        this.bindEvents();
+    }
+    
+    setupCanvas() {
+        this.ctx.fillStyle = this.options.backgroundColor;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.strokeStyle = this.options.penColor;
+        this.ctx.lineWidth = 2;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+    }
+    
+    bindEvents() {
+        // Mouse events
+        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+        this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.canvas.addEventListener('mouseout', () => this.stopDrawing());
+        
+        // Touch events
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.startDrawing(e.touches[0]);
+        });
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            this.draw(e.touches[0]);
+        });
+        this.canvas.addEventListener('touchend', () => this.stopDrawing());
+    }
+    
+    getPoint(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        return {
+            x: (e.clientX - rect.left) * ratio,
+            y: (e.clientY - rect.top) * ratio
+        };
+    }
+    
+    startDrawing(e) {
+        this.drawing = true;
+        this.lastPoint = this.getPoint(e);
+    }
+    
+    draw(e) {
+        if (!this.drawing) return;
+        
+        const point = this.getPoint(e);
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.lastPoint.x, this.lastPoint.y);
+        this.ctx.lineTo(point.x, point.y);
+        this.ctx.stroke();
+        this.lastPoint = point;
+        this.isEmpty = false;
+    }
+    
+    stopDrawing() {
+        if (this.drawing) {
+            this.drawing = false;
+            this.dispatchEvent('endStroke');
+        }
+    }
+    
+    dispatchEvent(eventName) {
+        const event = new Event(eventName);
+        this.canvas.dispatchEvent(event);
+    }
+    
+    clear() {
+        this.ctx.fillStyle = this.options.backgroundColor;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.isEmpty = true;
+    }
+    
+    toDataURL() {
+        return this.canvas.toDataURL();
+    }
+    
+    addEventListener(event, callback) {
+        this.canvas.addEventListener(event, callback);
+    }
+}
     </script>
 </body>
 </html>
