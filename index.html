@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAKIEEM MOBILE REPAIR SERVICE</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.7/signature_pad.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 HAKIEEM MOBILE REPAIR SERVICE</h1>
+            <p class="tagline">Professional Mobile Phone Repair</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+            <button class="nav-btn" data-view="new-job">New Job</button>
+            <button class="nav-btn" data-view="history">History</button>
+        </nav>
+
+        <div id="dashboard-view" class="view active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="active-jobs">0</div>
+                    <div class="stat-label">Active Jobs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completed-today">0</div>
+                    <div class="stat-label">Completed Today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-jobs">0</div>
+                    <div class="stat-label">Total Jobs</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Active Jobs</h2>
+                <div id="active-jobs-list" class="jobs-list">
+                    <p class="empty-state">No active jobs. Click "New Job" to start.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="new-job-view" class="view">
+            <h2>Create New Job Order</h2>
+            <form id="new-job-form">
+                <div class="form-section">
+                    <h3>Customer Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Customer Name *</label>
+                            <input type="text" id="customer-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number *</label>
+                            <input type="tel" id="customer-phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label>IC Number</label>
+                            <input type="text" id="customer-ic">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Device Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Device Type *</label>
+                            <select id="device-type" required>
+                                <option value="">Select...</option>
+                                <option value="iPhone">iPhone</option>
+                                <option value="Android">Android</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Model *</label>
+                            <input type="text" id="device-model" placeholder="e.g., iPhone 13 Pro Max" required>
+                        </div>
+                        <div class="form-group">
+                            <label>IMEI / Serial Number</label>
+                            <input type="text" id="device-imei">
+                        </div>
+                        <div class="form-group">
+                            <label>Color</label>
+                            <input type="text" id="device-color">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Issue Description</h3>
+                    <div class="form-group">
+                        <label>Customer Reported Issue *</label>
+                        <textarea id="issue-description" rows="3" required></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Internal Pricing (Hidden from Customer)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Component Cost (RM)</label>
+                            <input type="number" id="component-cost" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Labor Cost (RM)</label>
+                            <input type="number" id="labor-cost" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Price (RM) *</label>
+                            <input type="number" id="customer-price" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <p class="note">⚠️ Customer hanya nampak "Customer Price" dalam resit</p>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Create Job Order</button>
+                    <button type="reset" class="btn btn-secondary">Clear Form</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="job-detail-view" class="view">
+            <div class="job-header">
+                <button class="btn btn-back" onclick="showView('dashboard')">← Back</button>
+                <h2 id="job-title">Job Details</h2>
+            </div>
+
+            <div class="job-info" id="job-info-section"></div>
+
+            <div class="workflow-section">
+                <h3>Pre-Repair Checklist</h3>
+                <div id="pre-repair-checklist" class="checklist"></div>
+                <button class="btn btn-success" onclick="completePreRepair()">✓ Complete Pre-Repair Check</button>
+            </div>
+
+            <div class="workflow-section">
+                <h3>Repair Status</h3>
+                <div class="status-buttons">
+                    <button class="btn status-btn" data-status="In Progress" onclick="updateStatus('In Progress')">🔧 In Progress</button>
+                    <button class="btn status-btn" data-status="Waiting Part" onclick="updateStatus('Waiting Part')">⏳ Waiting Part</button>
+                    <button class="btn status-btn" data-status="Completed" onclick="updateStatus('Completed')">✅ Completed</button>
+                </div>
+                <div class="form-group">
+                    <label>Repair Notes</label>
+                    <textarea id="repair-notes" rows="3" placeholder="What was done during repair..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveRepairNotes()">Save Notes</button>
+            </div>
+
+            <div class="workflow-section">
+                <h3>Post-Repair Checklist</h3>
+                <div id="post-repair-checklist" class="checklist"></div>
+                <button class="btn btn-success" onclick="completePostRepair()">✓ Complete Post-Repair Check</button>
+            </div>
+
+            <div class="workflow-section">
+                <h3>Customer Collection</h3>
+                <button class="btn btn-primary" onclick="showReceiptPreview()">📄 Generate Receipt</button>
+            </div>
+        </div>
+
+        <div id="receipt-view" class="view">
+            <div class="receipt-header">
+                <button class="btn btn-back" onclick="backToJobDetail()">← Back to Job</button>
+                <h2>Receipt Preview</h2>
+            </div>
+
+            <div class="receipt-container" id="receipt-content">
+                <div class="receipt-business">
+                    <h2>HAKIEEM MOBILE REPAIR SERVICE</h2>
+                    <p>USIM Campus | 01X-XXXXXXX</p>
+                </div>
+
+                <div class="receipt-info">
+                    <div class="receipt-row">
+                        <span class="label">Job ID:</span>
+                        <span class="value" id="receipt-job-id"></span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="label">Date:</span>
+                        <span class="value" id="receipt-date"></span>
+                    </div>
+                </div>
+
+                <div class="receipt-section">
+                    <h3>CUSTOMER INFO</h3>
+                    <div id="receipt-customer-info"></div>
+                </div>
+
+                <div class="receipt-section">
+                    <h3>REPAIR DETAILS</h3>
+                    <div id="receipt-repair-details"></div>
+                </div>
+
+                <div class="receipt-section">
+                    <h3>PRE-REPAIR CHECK</h3>
+                    <div id="receipt-pre-check"></div>
+                </div>
+
+                <div class="receipt-section">
+                    <h3>POST-REPAIR CHECK</h3>
+                    <div id="receipt-post-check"></div>
+                </div>
+
+                <div class="receipt-section">
+                    <h3>PAYMENT</h3>
+                    <div class="receipt-payment">
+                        <div class="payment-row">
+                            <span>Service Fee:</span>
+                            <span class="amount" id="receipt-total"></span>
+                        </div>
+                        <div class="payment-row">
+                            <span>Warranty:</span>
+                            <span>30 days</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="receipt-section">
+                    <h3>WARRANTY TERMS</h3>
+                    <ul class="warranty-terms">
+                        <li>30 days warranty untuk repair yang sama</li>
+                        <li>Tidak termasuk kerosakan baru (jatuh, air, dll)</li>
+                        <li>Warranty batal jika device dibuka oleh orang lain</li>
+                    </ul>
+                </div>
+
+                <div class="receipt-signatures">
+                    <div class="signature-box">
+                        <canvas id="customer-signature" width="300" height="150"></canvas>
+                        <p>Customer Signature</p>
+                        <p class="sig-name" id="sig-customer-name"></p>
+                    </div>
+                    <div class="signature-box">
+                        <canvas id="owner-signature" width="300" height="150"></canvas>
+                        <p>Owner Signature</p>
+                        <p class="sig-name">Hakieem</p>
+                    </div>
+                </div>
+
+                <div class="receipt-footer">
+                    <p>Thank you for your business!</p>
+                </div>
+            </div>
+
+            <div class="receipt-actions">
+                <button class="btn btn-success" onclick="downloadReceipt()">📥 Download PDF</button>
+                <button class="btn btn-primary" onclick="printReceipt()">🖨️ Print Receipt</button>
+                <button class="btn btn-secondary" onclick="clearSignatures()">🗑️ Clear Signatures</button>
+            </div>
+        </div>
+
+        <div id="history-view" class="view">
+            <h2>Job History</h2>
+            <div class="filter-bar">
+                <input type="text" id="search-jobs" placeholder="Search by customer name or job ID...">
+                <select id="filter-status">
+                    <option value="all">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div id="history-list" class="jobs-list">
+                <p class="empty-state">No jobs yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
